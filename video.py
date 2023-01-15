@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 
 class VideoFile:
+    """ Stores properties of the video """
     def __init__(self, videoNameWithPath) -> None:
         self.videoName = videoNameWithPath
         self.video = cv2.VideoCapture(self.videoName)
@@ -32,8 +33,21 @@ class VideoFile:
         self.video.release()
         cv2.destroyAllWindows()
 
-    # def iterate(self):
-    #     example = np.ones([500,500,500], dtype=np.uint8)
-    #     height, width, depth = img.shape
-    #     img[0:height, 0:width//4, 0:depth] = 0 # DO THIS INSTEAD
+ 
+class DisplayVideos:
+    """ Provides the functionality to display the videos next to each other """
+    def __init__(self, videoLocations) -> None:
+        self.videos = [VideoFile(videoFile) for videoFile in videoLocations]
+        self.framerate = self.findMaxFramerate()
+        self.width, self.height = self.determineMaxDisplaySize()
 
+    def display(self):
+        pass
+    
+    def determineMaxDisplaySize(self):
+        width = max(set([video.width for video in self.videos]))
+        height = max(set([video.height for video in self.videos]))
+        return width, height
+
+    def findMaxFramerate(self):
+        return max(set([video.fps for video in self.videos]))

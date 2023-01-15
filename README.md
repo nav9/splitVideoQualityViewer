@@ -9,6 +9,10 @@ pip3 install -r requirements.txt
 # Run
 python3 main.py "/path/to/original_video.mkv" "/path/to/converted_video.mp4"
 
+# Controls
+* Esc to exit.
+* Spacebar to pause for one second.
+
 # TODO
 * Split the video along other axes.
 * Videos of two different framerates.
@@ -16,4 +20,5 @@ python3 main.py "/path/to/original_video.mkv" "/path/to/converted_video.mp4"
 * Split video depending on mouse pointer position.
 * Support for more than two videos shown simultaneously.
 * Checking if video can be displayed within current screen limits.
-
+* Add more key and mouse controls.
+* Add more video metadata displays on-screen.

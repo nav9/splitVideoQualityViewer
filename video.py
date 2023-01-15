@@ -41,12 +41,13 @@ class DisplayVideos:
             ret_left, frame_left = self.leftVideo.video.read() #frame is a numpy nd array
             ret_right, frame_right = self.rightVideo.video.read() 
             if ret_left and ret_right:
-                #---left image
                 x1 = 0; y1 = 0; x2 = int(self.leftVideo.width / 2); y2 = self.leftVideo.height                
                 regionOfInterest_left = frame_left[y1:y2, x1:x2] #https://stackoverflow.com/questions/55943596/check-only-particular-portion-of-video-feed-in-opencv
                 x1 = int(self.rightVideo.width / 2); y1 = 0; x2 = self.rightVideo.width; y2 = self.rightVideo.height
                 regionOfInterest_right = frame_right[y1:y2, x1:x2]
                 joined = np.concatenate((regionOfInterest_left, regionOfInterest_right), axis=1)
+                #---draw the vertical line TODO: Draw half the line as black and half as white (or contrast it based on background pixel color)
+                cv2.line(img=joined, pt1=(x1, y1), pt2=(x1, y2), color=(255, 255, 255), thickness=1, lineType=8, shift=0)                
                 cv2.imshow(self.windowName, joined)       
                 keyCode = cv2.waitKey(self.delay) & 0xFF #https://stackoverflow.com/questions/57690899/how-cv2-waitkey1-0xff-ordq-works
                 if keyCode == KeyCodes.ESC:
@@ -61,7 +62,7 @@ class DisplayVideos:
 
     def close(self):
         for video in self.videos:
-            video.release()
+            video.video.release()
         cv2.destroyAllWindows()
 
     def determineMaxDisplaySize(self):

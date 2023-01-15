@@ -7,7 +7,7 @@ Inspired from the brilliant [Vivict](https://github.com/vivictorg/vivict) projec
 pip3 install -r requirements.txt
 
 # Run
-python3 main.py
+python3 main.py "/path/to/original_video.mkv" "/path/to/converted_video.mp4"
 
 # TODO
 * Split the video along other axes.

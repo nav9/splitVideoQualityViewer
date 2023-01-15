@@ -1,8 +1,13 @@
 import video
+import argparse
 
 if __name__ == "__main__":
-    videos = ["/home/navin/code/ffmpegProfilerFindingOptimalSettings/originals/surfing.mkv",
-                "/home/navin/code/ffmpegProfilerFindingOptimalSettings/encoded/surfing/o-presetfast_-crf40_.mp4"]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("left", type=str)
+    parser.add_argument("right", type=str)
+    args = parser.parse_args()
+
+    videos = [args.left, args.right]
     display = video.DisplayVideos(videos)
     display.display()
     

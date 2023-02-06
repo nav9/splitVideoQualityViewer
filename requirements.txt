@@ -1,3 +1,9 @@
+#Note: It's not necessary to stick to these version numbers. Feel free to use the latest versions.
+#The version numbers are mentioned here merely to indicate what version the program worked with reliably the last time it was run.
 opencv-python==4.6.0.66
 numpy==1.23.1
 argparse==1.4.0
+loguru==0.6.0
+
+#Linux-specific
+screeninfo==0.8.1

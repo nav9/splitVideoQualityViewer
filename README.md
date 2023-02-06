@@ -5,20 +5,21 @@ Inspired from the brilliant [Vivict](https://github.com/vivictorg/vivict) projec
   
 # Install
 pip3 install -r requirements.txt
-
+  
 # Run
-python3 main.py "/path/to/original_video.mkv" "/path/to/converted_video.mp4"
-
+`python3 main.py -v video1.mkv video2.mp4 video3.mkv video4.mkv`  
+You can add more videos. Currently, eight simultaneous video displays are supported. It can be increased in the code.  
+  
 # Controls
 * Esc to exit.
 * Spacebar to pause for one second.
-
+  
 # TODO
-* Split the video along other axes.
 * Videos of two different framerates.
-* Videos of different dimensions.
 * Split video depending on mouse pointer position.
-* Support for more than two videos shown simultaneously.
+* Support for more than two videos shown simultaneously. 
 * Checking if video can be displayed within current screen limits.
 * Add more key and mouse controls.
 * Add more video metadata displays on-screen.
+* Won't implement: Videos of different dimensions (this is difficult to do in Python, since it needs high processing power. Skipping this).
+* Add support for multiple monitors

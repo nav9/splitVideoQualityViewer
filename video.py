@@ -1,6 +1,8 @@
 import cv2
 import time
 import numpy as np
+from operatingSystem import screen
+from loguru import logger as log
 
 class Const:
     FIRST_LIST_ELEMENT = 0
@@ -30,21 +32,21 @@ class VideoFile:
         self.height = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.fps = self.video.get(cv2.CAP_PROP_FPS)        
-        print(f"Video: {self.video}, height: {self.height}, width: {self.width}, fps: {self.fps}")
+        log.info(f"Video: {self.video}, height: {self.height}, width: {self.width}, fps: {self.fps}, name: {videoNameWithPath}")
 
 #Note: It's not necessary that all videos will have the same dimensions, codec or framerate
 class VideoProcessor:
     """ Performs various calculations on the videos """
     def __init__(self, videos) -> None:
         self.videos = videos
-        self.videoSplitType = self.determineVideoSplitType() #Whether and how a video needs to be split
+        self.videoSplitType = None
+        self.determineVideoSplitType() #Whether and how a video needs to be split
         self.allowMouseHover = False
         self.splitLineColor = (255, 255, 255) #TODO: Draw half the line as black and half as white (or contrast it based on background pixel color)
         self.lineThickness = 1
         self.lineType = 8
 
     def determineVideoSplitType(self):
-        self.videoSplitType = None
         if len(self.videos) <= 1: self.videoSplitType = VideoSplit.NONE
         else: self.videoSplitType = VideoSplit.VERTICAL #the default
 
@@ -52,18 +54,19 @@ class VideoProcessor:
         if self.videoSplitType == VideoSplit.HORIZONTAL: self.videoSplitType = VideoSplit.VERTICAL
         if self.videoSplitType == VideoSplit.VERTICAL: self.videoSplitType = VideoSplit.HORIZONTAL
 
-    def splitVideo(self, leftVideoFrame, rightVideoFrame, mouseX=0, mouseY=0):
+    def splitVideo(self, leftVideoFrame, leftVideo, rightVideoFrame, rightVideo, mouseX=0, mouseY=0):
+        log.info(f"split type: {self.videoSplitType}")
         #--- Region of Interest: Left/top side        
         if self.videoSplitType == VideoSplit.VERTICAL: 
-            x1 = 0; y1 = 0; x2 = int(leftVideoFrame.width / 2); y2 = leftVideoFrame.height                
+            x1 = 0; y1 = 0; x2 = int(leftVideo.width / 2); y2 = leftVideo.height                
         if self.videoSplitType == VideoSplit.HORIZONTAL:            
-            x1 = 0; y1 = int(leftVideoFrame.height / 2); x2 = leftVideoFrame.width; y2 = leftVideoFrame.height
+            x1 = 0; y1 = int(leftVideo.height / 2); x2 = leftVideo.width; y2 = leftVideo.height
         leftRegionOfInterest = leftVideoFrame[y1:y2, x1:x2] #https://stackoverflow.com/questions/55943596/check-only-particular-portion-of-video-feed-in-opencv
         #--- Region of Interest: Right/bottom side
         if self.videoSplitType == VideoSplit.VERTICAL:
-            x1 = int(rightVideoFrame.width / 2); y1 = 0; x2 = rightVideoFrame.width; y2 = rightVideoFrame.height
+            x1 = int(rightVideo.width / 2); y1 = 0; x2 = rightVideo.width; y2 = rightVideo.height
         if self.videoSplitType == VideoSplit.HORIZONTAL:                            
-            x1 = 0; y1 = int(rightVideoFrame.height / 2); x2 = rightVideoFrame.width; y2 = rightVideoFrame.height
+            x1 = 0; y1 = int(rightVideo.height / 2); x2 = rightVideo.width; y2 = rightVideo.height
         rightRegionOfInterest = rightVideoFrame[y1:y2, x1:x2]
         joined = np.concatenate((leftRegionOfInterest, rightRegionOfInterest), axis=self.videoSplitType)
         #---draw the splitter line 
@@ -95,8 +98,9 @@ class DisplayVideos:
         while self.leftVideo.video.isOpened() and self.rightVideo.video.isOpened():
             returnValueLeft, leftVideoFrame = self.leftVideo.video.read() #frame is a numpy nd array
             returnValueRight, rightVideoFrame = self.rightVideo.video.read() 
-            if returnValueLeft and returnValueRight:
-                joined = self.processor.splitVideo(leftVideoFrame, rightVideoFrame)
+            print(rightVideoFrame, type(rightVideoFrame))
+            if returnValueLeft and returnValueRight:#obtained both frames
+                joined = self.processor.splitVideo(leftVideoFrame, self.leftVideo, rightVideoFrame, self.rightVideo)
                 cv2.imshow(self.windowName, joined)       
                 keyCode = cv2.waitKey(self.delay) & 0xFF #https://stackoverflow.com/questions/57690899/how-cv2-waitkey1-0xff-ordq-works
                 if keyCode == KeyCodes.ESC:
@@ -117,8 +121,12 @@ class DisplayVideos:
 
     def findMaxDisplaySize(self):
         """ Returns the maximum width of any video and maximum height of any video in the list of videos """
+        monitor = screen.MonitorInfo()
+        monitorWidth, monitorHeight = monitor.getMonitorDimensions()
         width = max(set([video.width for video in self.videos]))
         height = max(set([video.height for video in self.videos]))
+        if width > monitorWidth or height > monitorHeight:
+            log.warning(f"\n\nYour primary monitor width {monitorWidth} and height {monitorHeight} are less than the video width {width} and height {height}.")
         return width, height
 
     def findMaxFramerate(self):

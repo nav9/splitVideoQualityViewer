@@ -7,8 +7,7 @@ Inspired from the brilliant [Vivict](https://github.com/vivictorg/vivict) projec
 pip3 install -r requirements.txt
   
 # Run
-`python3 main.py -v video1.mkv video2.mp4 video3.mkv video4.mkv`  
-You can add more videos. Currently, eight simultaneous video displays are supported. It can be increased in the code.  
+`python3 main.py -v video1.mkv video2.mp4`  
   
 # Controls
 * Esc to exit.

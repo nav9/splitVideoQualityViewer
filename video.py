@@ -1,5 +1,6 @@
 import cv2
 import time
+import math
 import numpy as np
 from operatingSystem import screen
 from loguru import logger as log
@@ -30,13 +31,17 @@ class VideoFile:
         self.width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.fps = self.video.get(cv2.CAP_PROP_FPS)        
         log.info(f"Video: {self.video}, height: {self.height}, width: {self.width}, fps: {self.fps}, name: {videoNameWithPath}")
+        self.x1 = None #start x coordinate for portion of split video to display
+        self.y1 = None #start y coordinate for portion of split video to display
+        self.x2 = None #end x coordinate for portion of split video to display
+        self.y2 = None #end y coordinate for portion of split video to display
 
 #Note: It's not necessary that all videos will have the same dimensions, codec or framerate
 class VideoProcessor:
     """ Performs various calculations on the videos """
     def __init__(self) -> None:
         #self.videos = videos
-        self.videoSplitType = None        
+        self.videoSplitType = VideoSplit.NONE
         #self.determineVideoSplitType() #Whether and how a video needs to be split
         self.videoOrder = []
         self.allowMouseHover = False
@@ -45,20 +50,40 @@ class VideoProcessor:
         self.lineType = 8
 
     def determineVideoSplitType(self, videos):
-        if len(videos) <= 1: self.videoSplitType = VideoSplit.NONE
-        else: self.videoSplitType = Const.NUMPY_VERTICAL_AXIS #the default
+        if len(videos) > 1 and self.videoSplitType == VideoSplit.NONE: #if the videoSplitType has never neen assigned based on the number of videos (when there are more than 1 video)
+            self.videoSplitType = Const.NUMPY_VERTICAL_AXIS #the default
 
     def toggleSplitAxis(self):
         if self.videoSplitType == Const.NUMPY_HORIZONTAL_AXIS: self.videoSplitType = Const.NUMPY_VERTICAL_AXIS
         if self.videoSplitType == Const.NUMPY_VERTICAL_AXIS: self.videoSplitType = Const.NUMPY_HORIZONTAL_AXIS
 
-    def calculatePaddings(self, videos):
+    def calculateSplitDimensionsAndPaddings(self, videos):#if videos are of different sizes, to join pieces of their frames, you need to pad the remaining space with zeroes
         self.determineVideoSplitType(videos)
+        widths = set([video.width for video in videos])
+        heights = set([video.height for video in videos])
+        maxWidth = max(widths); minWidth = min(widths)
+        maxHeight = max(heights); minHeight = min(heights)        
+        #---find coordinates to split each video into and the padding it needs
+        splitPercentage = 1 / len(videos)
+        ordinal = 0; FIRST_VIDEO = 0; LAST_VIDEO = len(videos)-1
+        for video in videos:            
+            if self.videoSplitType == VideoSplit.VERTICAL:
+                video.y1 = 0; video.y2 = video.height
+                video.x1 = math.floor(ordinal * (video.width * splitPercentage))
+                video.x2 = math.floor(video.x1 + (video.width * splitPercentage))
+                #---padding calculation
+            if self.videoSplitType == VideoSplit.HORIZONTAL:
+                video.x1 = 0; video.x2 = video.width
+                video.y1 = math.floor(ordinal * (video.height * splitPercentage))
+                video.y2 = math.floor(video.y1 + (video.height * splitPercentage))                
+                #---padding calculation
+            ordinal += 1                
 
     def splitAndArrangeVideoPieces(self, videos, mouseX=0, mouseY=0):#videos is a dict {VideoFile object: video frame}
         if self.videoOrder != list(videos.keys()):#check if keys are in the exact same order (to ensure that the User did not change anything and to ensure that all video frames are the same as they were previously, because sometimes a video may run out of frames while the other videos continue playing)
-            self.calculatePaddings(videos)
+            self.calculateSplitDimensionsAndPaddings(videos)
             self.videoOrder = list(videos.keys())
+        #---
         #--- hardcoding temporarily
         counter = 0
         for video in videos:

@@ -103,15 +103,13 @@ class VideoProcessor:
             self.calculateSplitDimensionsAndPaddings(videos)
             self.videoOrder = list(videos.keys())
         #---join the various video slices
-        joined = np.array([])
+        joined = np.array(None); EMPTY_ARRAY = 1
         for video in videos:
             newFrame = videos[video][video.y1:video.y2, video.x1:video.x2]
             if video.padding:
                 joined = np.concatenate((newFrame, video.padding), axis=self.videoSplitType)
-            if len(joined.shape) == 1:
-                joined = newFrame                
-            else:
-                joined = np.concatenate((joined, newFrame), axis=self.videoSplitType)
+            if joined.size == EMPTY_ARRAY: joined = newFrame                
+            else: joined = np.concatenate((joined, newFrame), axis=self.videoSplitType)
 
 
             # if self.videoSplitType == VideoSplit.VERTICAL: 

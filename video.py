@@ -35,6 +35,10 @@ class VideoFile:
         self.y1 = None #start y coordinate for portion of split video to display
         self.x2 = None #end x coordinate for portion of split video to display
         self.y2 = None #end y coordinate for portion of split video to display
+        self.paddingX1 = None
+        self.paddingX2 = None
+        self.paddingY1 = None
+        self.paddingY2 = None
 
 #Note: It's not necessary that all videos will have the same dimensions, codec or framerate
 class VideoProcessor:
@@ -61,22 +65,26 @@ class VideoProcessor:
         self.determineVideoSplitType(videos)
         widths = set([video.width for video in videos])
         heights = set([video.height for video in videos])
-        maxWidth = max(widths); minWidth = min(widths)
-        maxHeight = max(heights); minHeight = min(heights)        
+        maxWidth = max(widths)#; minWidth = min(widths)
+        maxHeight = max(heights)#; minHeight = min(heights)        
         #---find coordinates to split each video into and the padding it needs
         splitPercentage = 1 / len(videos)
-        ordinal = 0; FIRST_VIDEO = 0; LAST_VIDEO = len(videos)-1
+        ordinal = 0#; FIRST_VIDEO = 0; LAST_VIDEO = len(videos)-1
         for video in videos:            
             if self.videoSplitType == VideoSplit.VERTICAL:
                 video.y1 = 0; video.y2 = video.height
                 video.x1 = math.floor(ordinal * (video.width * splitPercentage))
                 video.x2 = math.floor(video.x1 + (video.width * splitPercentage))
                 #---padding calculation
+                if video.y2 == maxHeight: video.paddingX1 = None; video.paddingX2 = None; video.paddingY1 = None; video.paddingY2 = None
+                else: video.paddingX1 = video.x1; video.paddingX2 = video.x2; video.paddingY1 = video.y2 + 1; video.paddingY2 = video.paddingY1 + (maxHeight - video.paddingY1)
             if self.videoSplitType == VideoSplit.HORIZONTAL:
                 video.x1 = 0; video.x2 = video.width
                 video.y1 = math.floor(ordinal * (video.height * splitPercentage))
                 video.y2 = math.floor(video.y1 + (video.height * splitPercentage))                
                 #---padding calculation
+                if video.x2 == maxWidth: video.paddingY1 = None; video.paddingY2 = None; video.paddingX1 = None; video.paddingX2 = None
+                else: video.paddingY1 = video.y1; video.paddingY2 = video.y2; video.paddingX1 = video.x2 + 1; video.paddingX2 = video.paddingX1 + (maxWidth - video.paddingX1)                
             ordinal += 1                
 
     def splitAndArrangeVideoPieces(self, videos, mouseX=0, mouseY=0):#videos is a dict {VideoFile object: video frame}

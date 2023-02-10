@@ -17,8 +17,8 @@ pip3 install -r requirements.txt
 * Videos of two different framerates.
 * Split video depending on mouse pointer position.
 * Support for more than two videos shown simultaneously. 
-* Checking if video can be displayed within current screen limits.
+* Support for videos of varied dimensions to be shown simultaneously.
 * Add more key and mouse controls.
 * Add more video metadata displays on-screen.
-* Won't implement: Videos of different dimensions (this is difficult to do in Python, since it needs high processing power. Skipping this).
 * Add support for multiple monitors
+* Support for showing grayscale videos (2D) along with colour videos (3D).

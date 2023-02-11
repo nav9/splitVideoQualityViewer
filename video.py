@@ -40,12 +40,9 @@ class VideoFile:
     
     def makePaddingEmptyArray(self):
         self.padding = np.array(None)
-        print(f"Video {self} needs no padding")
 
     def createPadding(self, frame, paddingWidth, paddingHeight):
         if len(frame.shape) == Const.RGB_VIDEO_DIMENSION_LEN:#is a video with (height, width, RGB depth)
-            #paddingHeight = self.y2 - self.y1; paddingWidth = self.x2 - self.x1
-            print(f"Creating padding: ht {paddingHeight}, wd {paddingWidth}, dim {Const.RGB_VIDEO_DIMENSION_LEN} for vid {self}")
             self.padding = np.zeros((paddingHeight, paddingWidth, Const.RGB_VIDEO_DIMENSION_LEN))
 
 #Note: It's not necessary that all videos will have the same dimensions, codec or framerate
@@ -69,8 +66,9 @@ class VideoProcessor:
         if self.videoSplitType == Const.NUMPY_HORIZONTAL_AXIS: self.videoSplitType = Const.NUMPY_VERTICAL_AXIS
         if self.videoSplitType == Const.NUMPY_VERTICAL_AXIS: self.videoSplitType = Const.NUMPY_HORIZONTAL_AXIS
 
+    #https://stackoverflow.com/questions/43391205/add-padding-to-images-to-get-them-into-the-same-shape
     def calculateSplitDimensionsAndPaddings(self, videos):#if videos are of different sizes, to join pieces of their frames, you need to pad the remaining space with zeroes
-        #videos is a dict {video object reference: video frame}. The frame is a numpy array (videoHeight, videoWidth, rgb axis)
+        #Note: videos is a dict {video object reference: video frame}. The frame is a numpy array (videoHeight, videoWidth, rgb axis)
         self.determineVideoSplitType(videos)
         widths = set([video.width for video in videos])
         heights = set([video.height for video in videos])
@@ -84,22 +82,16 @@ class VideoProcessor:
                 video.y1 = 0; video.y2 = video.height
                 video.x1 = math.floor(ordinal * (video.width * splitPercentage))
                 video.x2 = math.floor(video.x1 + (video.width * splitPercentage))
-                print(f"vert: x1 {video.x1} y1 {video.y1} x2 {video.x2} y2 {video.y2} maxHeight {maxHeight} vid {video}")
                 #---padding calculation
                 if video.y2 == maxHeight: video.makePaddingEmptyArray() #no need of padding, since the video is as big as the largest video
                 else: video.createPadding(videos[video], video.x2 - video.x1, maxHeight - video.y2)                
-                # if video.y2 == maxHeight: video.paddingX1 = None; video.paddingX2 = None; video.paddingY1 = None; video.paddingY2 = None
-                # else: video.paddingX1 = video.x1; video.paddingX2 = video.x2; video.paddingY1 = video.y2 + 1; video.paddingY2 = video.paddingY1 + (maxHeight - video.paddingY1)
             if self.videoSplitType == VideoSplit.HORIZONTAL:
                 video.x1 = 0; video.x2 = video.width
                 video.y1 = math.floor(ordinal * (video.height * splitPercentage))
                 video.y2 = math.floor(video.y1 + (video.height * splitPercentage))                
                 #---padding calculation
-                print(f"vert: x1 {video.x1} y1 {video.y1} x2 {video.x2} y2 {video.y2} maxWidth {maxWidth} vid {video}")
                 if video.x2 == maxWidth: video.makePaddingEmptyArray() #no need of padding, since the video is as big as the largest video
                 else: video.createPadding(videos[video], maxWidth - video.x2, video.y2 - video.y1)
-                #if video.x2 == maxWidth: video.paddingY1 = None; video.paddingY2 = None; video.paddingX1 = None; video.paddingX2 = None
-                #else: video.paddingY1 = video.y1; video.paddingY2 = video.y2; video.paddingX1 = video.x2 + 1; video.paddingX2 = video.paddingX1 + (maxWidth - video.paddingX1)                
             #---generate numpy array with padding
             ordinal += 1                
 
@@ -108,62 +100,17 @@ class VideoProcessor:
             self.calculateSplitDimensionsAndPaddings(videos)
             self.videoOrder = list(videos.keys())
         paddingAxis = 0
-        if self.videoSplitType == 0: paddingAxis = 1
-        print(f"paddingAxis {paddingAxis}")
+        if self.videoSplitType == 0: paddingAxis = 1 #the axis along which padding arrays are joined with their respective video arrays, is the opposite axis of the video slices being joined with each other
         #---join the various video slices
         joined = np.array(None); EMPTY_ARRAY = 1
         for video in videos:
-            print(f"-----------Arranging video {video}")
             newFrame = videos[video][video.y1:video.y2, video.x1:video.x2] #select region to be displayed
-            print(f"newFrame shape {newFrame.shape}, padding shape {video.padding.shape}")
             #---join the padding with the video slice
-            if video.padding.size != EMPTY_ARRAY:
-                padded = np.concatenate((newFrame, video.padding), axis=paddingAxis)                
-                print(f"padded successfully: shape {padded.shape}")
-            else:
-                print("no need for padding")
-                padded = newFrame
+            if video.padding.size != EMPTY_ARRAY: padded = np.concatenate((newFrame, video.padding), axis=paddingAxis)                
+            else: padded = newFrame
             #---join the padded video slice with the other video slices
             if joined.size == EMPTY_ARRAY: joined = padded
             else: joined = np.concatenate((joined, padded), axis=self.videoSplitType)
-
-
-            # if self.videoSplitType == VideoSplit.VERTICAL: 
-            #     newFrame = 
-            # if self.videoSplitType == VideoSplit.HORIZONTAL:             
-            #     pass
-    
-        # #--- hardcoding temporarily
-        # counter = 0
-        # for video in videos:
-        #     if counter == 0: 
-        #         leftVideo = video
-        #         leftVideoFrame = videos[video]
-        #     if counter == 1: 
-        #         rightVideo = video
-        #         rightVideoFrame = videos[video]
-        #     counter += 1
-        # #--- Region of Interest: Left/top side        
-        # if self.videoSplitType == VideoSplit.VERTICAL: 
-        #     x1 = 0; y1 = 0; x2 = int(leftVideo.width / 2); y2 = leftVideo.height                
-        # if self.videoSplitType == Const.NUMPY_HORIZONTAL_AXIS:            
-        #     x1 = 0; y1 = int(leftVideo.height / 2); x2 = leftVideo.width; y2 = leftVideo.height
-        # leftRegionOfInterest = leftVideoFrame[y1:y2, x1:x2] #https://stackoverflow.com/questions/55943596/check-only-particular-portion-of-video-feed-in-opencv
-        # #--- Region of Interest: Right/bottom side
-        # if self.videoSplitType == VideoSplit.VERTICAL:
-        #     x1 = int(rightVideo.width / 2); y1 = 0; x2 = rightVideo.width; y2 = rightVideo.height
-        # if self.videoSplitType == Const.NUMPY_HORIZONTAL_AXIS:                            
-        #     x1 = 0; y1 = int(rightVideo.height / 2); x2 = rightVideo.width; y2 = rightVideo.height
-        # rightRegionOfInterest = rightVideoFrame[y1:y2, x1:x2]
-
-        # joined = np.concatenate((leftRegionOfInterest, rightRegionOfInterest), axis=self.videoSplitType)
-        # #---draw the splitter line 
-        # point1 = None; point2 = None
-        # if self.videoSplitType == VideoSplit.VERTICAL:
-        #     point1 = (x1, y1); point2 = (x1, y2)
-        # if self.videoSplitType == Const.NUMPY_HORIZONTAL_AXIS:
-        #     point1 = (x1, y1); point2 = (x2, y1)
-        # cv2.line(img=joined, pt1=point1, pt2=point2, color=self.splitLineColor, thickness=self.lineThickness, lineType=self.lineType, shift=0)
         return joined
 
 class DisplayVideos:
@@ -180,6 +127,7 @@ class DisplayVideos:
         self.windowName = 'Comparing Videos'
         cv2.namedWindow(self.windowName, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(self.windowName, self.width, self.height)         
+        self.processor.toggleSplitAxis()
         while True:
             #---iterate videos assuming that one of them might stop supplying frames eariler than the others
             activeVideos = dict()            
@@ -190,8 +138,8 @@ class DisplayVideos:
                         #print(f"dimensions:  {videoFrame.ndim}, {videoFrame.shape}")
                         activeVideos[video] = videoFrame
             if not activeVideos:#if there are no active videos remaining
-                break #exit while
-            joined = self.processor.splitAndArrangeVideoPieces(activeVideos)
+                break #exit while            
+            joined = self.processor.splitAndArrangeVideoPieces(activeVideos)            
             cv2.imshow(self.windowName, joined)       
             keyCode = cv2.waitKey(self.defaultDelay) & 0xFF #https://stackoverflow.com/questions/57690899/how-cv2-waitkey1-0xff-ordq-works
             if keyCode == KeyCodes.ESC:
@@ -202,29 +150,6 @@ class DisplayVideos:
                 self.processor.toggleSplitAxis()
             #time.sleep(0.05) #0.05 is 50 millisecond
         self.close()
-        
-    # def display(self):
-    #     #Concatenate images: https://stackoverflow.com/questions/7589012/combining-two-images-with-opencv
-    #     self.windowName = 'Comparing Videos'
-    #     cv2.namedWindow(self.windowName, cv2.WINDOW_NORMAL)
-    #     cv2.resizeWindow(self.windowName, self.width, self.height) 
-    #     while self.leftVideo.video.isOpened() and self.rightVideo.video.isOpened():
-    #         returnValueLeft, leftVideoFrame = self.leftVideo.video.read() #frame is a numpy nd array
-    #         returnValueRight, rightVideoFrame = self.rightVideo.video.read() 
-    #         if returnValueLeft and returnValueRight:#obtained both frames
-    #             joined = self.processor.splitVideo(leftVideoFrame, self.leftVideo, rightVideoFrame, self.rightVideo)
-    #             cv2.imshow(self.windowName, joined)       
-    #             keyCode = cv2.waitKey(self.defaultDelay) & 0xFF #https://stackoverflow.com/questions/57690899/how-cv2-waitkey1-0xff-ordq-works
-    #             if keyCode == KeyCodes.ESC:
-    #                 break
-    #             if keyCode == KeyCodes.SPACEBAR:
-    #                 time.sleep(1)
-    #             if keyCode == ord('s') or keyCode == ord('S'):#to split the video horizontally
-    #                 self.processor.toggleSplitAxis()
-    #         else:#either the left or right frame or both could not be obtained
-    #             break
-    #         #time.sleep(0.05) #0.05 is 50 millisecond
-    #     self.close()
 
     def close(self):
         """ Clear resources """

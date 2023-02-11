@@ -36,14 +36,17 @@ class VideoFile:
         self.y1 = None #start y coordinate for portion of split video to display
         self.x2 = None #end x coordinate for portion of split video to display
         self.y2 = None #end y coordinate for portion of split video to display
-        self.padding = None
+        self.padding = self.makePaddingEmptyArray()
     
+    def makePaddingEmptyArray(self):
+        self.padding = np.array(None)
+        print(f"Video {self} needs no padding")
+
     def createPadding(self, frame, paddingWidth, paddingHeight):
-        if self.x1 == None:
-            return
         if len(frame.shape) == Const.RGB_VIDEO_DIMENSION_LEN:#is a video with (height, width, RGB depth)
-            paddingHeight = self.y2 - self.y1; paddingWidth = self.x2 - self.x1
-            self.padding = np.zeros(paddingHeight, paddingWidth, Const.RGB_VIDEO_DIMENSION_LEN)
+            #paddingHeight = self.y2 - self.y1; paddingWidth = self.x2 - self.x1
+            print(f"Creating padding: ht {paddingHeight}, wd {paddingWidth}, dim {Const.RGB_VIDEO_DIMENSION_LEN} for vid {self}")
+            self.padding = np.zeros((paddingHeight, paddingWidth, Const.RGB_VIDEO_DIMENSION_LEN))
 
 #Note: It's not necessary that all videos will have the same dimensions, codec or framerate
 class VideoProcessor:
@@ -81,9 +84,10 @@ class VideoProcessor:
                 video.y1 = 0; video.y2 = video.height
                 video.x1 = math.floor(ordinal * (video.width * splitPercentage))
                 video.x2 = math.floor(video.x1 + (video.width * splitPercentage))
+                print(f"vert: x1 {video.x1} y1 {video.y1} x2 {video.x2} y2 {video.y2} maxHeight {maxHeight} vid {video}")
                 #---padding calculation
-                if video.y2 == maxHeight: video.padding = None #no need of padding, since the video is as big as the largest video
-                else: video.createPadding(videos[video])                
+                if video.y2 == maxHeight: video.makePaddingEmptyArray() #no need of padding, since the video is as big as the largest video
+                else: video.createPadding(videos[video], video.x2 - video.x1, maxHeight - video.y2)                
                 # if video.y2 == maxHeight: video.paddingX1 = None; video.paddingX2 = None; video.paddingY1 = None; video.paddingY2 = None
                 # else: video.paddingX1 = video.x1; video.paddingX2 = video.x2; video.paddingY1 = video.y2 + 1; video.paddingY2 = video.paddingY1 + (maxHeight - video.paddingY1)
             if self.videoSplitType == VideoSplit.HORIZONTAL:
@@ -91,8 +95,9 @@ class VideoProcessor:
                 video.y1 = math.floor(ordinal * (video.height * splitPercentage))
                 video.y2 = math.floor(video.y1 + (video.height * splitPercentage))                
                 #---padding calculation
-                if video.x2 == maxWidth: video.padding = None #no need of padding, since the video is as big as the largest video
-                else: video.createPadding(videos[video])
+                print(f"vert: x1 {video.x1} y1 {video.y1} x2 {video.x2} y2 {video.y2} maxWidth {maxWidth} vid {video}")
+                if video.x2 == maxWidth: video.makePaddingEmptyArray() #no need of padding, since the video is as big as the largest video
+                else: video.createPadding(videos[video], maxWidth - video.x2, video.y2 - video.y1)
                 #if video.x2 == maxWidth: video.paddingY1 = None; video.paddingY2 = None; video.paddingX1 = None; video.paddingX2 = None
                 #else: video.paddingY1 = video.y1; video.paddingY2 = video.y2; video.paddingX1 = video.x2 + 1; video.paddingX2 = video.paddingX1 + (maxWidth - video.paddingX1)                
             #---generate numpy array with padding
@@ -102,14 +107,25 @@ class VideoProcessor:
         if self.videoOrder != list(videos.keys()):#check if keys are in the exact same order (to ensure that the User did not change anything and to ensure that all video frames are the same as they were previously, because sometimes a video may run out of frames while the other videos continue playing)
             self.calculateSplitDimensionsAndPaddings(videos)
             self.videoOrder = list(videos.keys())
+        paddingAxis = 0
+        if self.videoSplitType == 0: paddingAxis = 1
+        print(f"paddingAxis {paddingAxis}")
         #---join the various video slices
         joined = np.array(None); EMPTY_ARRAY = 1
         for video in videos:
-            newFrame = videos[video][video.y1:video.y2, video.x1:video.x2]
-            if video.padding:
-                joined = np.concatenate((newFrame, video.padding), axis=self.videoSplitType)
-            if joined.size == EMPTY_ARRAY: joined = newFrame                
-            else: joined = np.concatenate((joined, newFrame), axis=self.videoSplitType)
+            print(f"-----------Arranging video {video}")
+            newFrame = videos[video][video.y1:video.y2, video.x1:video.x2] #select region to be displayed
+            print(f"newFrame shape {newFrame.shape}, padding shape {video.padding.shape}")
+            #---join the padding with the video slice
+            if video.padding.size != EMPTY_ARRAY:
+                padded = np.concatenate((newFrame, video.padding), axis=paddingAxis)                
+                print(f"padded successfully: shape {padded.shape}")
+            else:
+                print("no need for padding")
+                padded = newFrame
+            #---join the padded video slice with the other video slices
+            if joined.size == EMPTY_ARRAY: joined = padded
+            else: joined = np.concatenate((joined, padded), axis=self.videoSplitType)
 
 
             # if self.videoSplitType == VideoSplit.VERTICAL: 

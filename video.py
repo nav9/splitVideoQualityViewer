@@ -6,7 +6,7 @@ import ntpath
 import numpy as np
 from operatingSystem import screen
 from loguru import logger as log
-from collections import namedtuple
+from collections import namedtuple, deque
 
 class Const:
     FIRST_LIST_ELEMENT = 0
@@ -96,7 +96,7 @@ class VideoProcessor:
     def toggleFileNameDisplay(self):
         if self.showFilename: self.showFilename = False
         else: self.showFilename = True
-
+                
     def calculateSplitDimensionsAndPaddings(self, videos):#if videos are of different sizes, to join pieces of their frames, you need to pad the remaining space with zeroes
         #Note: videos is a dict {video object reference: video frame}. The frame is a numpy array (videoHeight, videoWidth, rgb axis)
         self.determineVideoSplitType(videos)
@@ -168,7 +168,9 @@ class VideoProcessor:
 class DisplayVideos:
     """ Receives video frames and displays videos together """
     def __init__(self, videoLocations) -> None:
-        self.videos = [VideoFile(videoFile) for videoFile in videoLocations]
+        self.videos = deque()
+        for videoFile in videoLocations:
+            self.videos.append(VideoFile(videoFile))
         self.checkMaxSupportedVideos()
         self.framerate = self.findMaxFramerate()
         self.width, self.height = self.findMaxDisplaySize()
@@ -194,17 +196,13 @@ class DisplayVideos:
             joined = self.processor.splitAndArrangeVideoPieces(activeVideos)            
             cv2.imshow(self.windowName, joined) 
             keyCode = cv2.waitKey(self.defaultDelay) & 0xFF #https://stackoverflow.com/questions/57690899/how-cv2-waitkey1-0xff-ordq-works
-            if keyCode == KeyCodes.ESC:
-                break
-            if keyCode == KeyCodes.SPACEBAR:
-                time.sleep(1)
-            if keyCode == KeyCodes.UP_ARROW:
-                pass
-            if keyCode == KeyCodes.DOWN_ARROW:
-                pass
-            if keyCode == KeyCodes.LEFT_ARROW:
-                pass
-            if keyCode == KeyCodes.RIGHT_ARROW:
+            if keyCode == KeyCodes.ESC: break #exit the program
+            if keyCode == KeyCodes.SPACEBAR: time.sleep(1) #pause the video for a while
+            if keyCode == KeyCodes.UP_ARROW: self.videos.rotate(-1) #switch positions of the videos up if horizontal splits, and backward if vertical splits
+            if keyCode == KeyCodes.DOWN_ARROW: self.videos.rotate(1) #switch positions of videos down if horizontal splits, and forward if vertical splits
+            if keyCode == KeyCodes.LEFT_ARROW: #reserved for either seeking or slowing video
+                pass 
+            if keyCode == KeyCodes.RIGHT_ARROW: #reserved for either seeking or speeding video
                 pass                                          
             if keyCode == ord(KeyCodes.SPLIT_DIRECTION) or keyCode == ord(KeyCodes.SPLIT_DIRECTION.lower()):#to split the video horizontally or vertically
                 self.processor.toggleSplitAxis(activeVideos)            

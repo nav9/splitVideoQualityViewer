@@ -18,6 +18,8 @@ The maximum number of videos supported is the lowest value of the number of rows
 * `A` or `a` to toggle the axis of split (horizontal or vertical). This is vertical by default.
 * `L` or `l` to toggle the display of the line separating the videos. This is switched on by default. No line will be shown if only one video is being played.
 * `N` or `n` to toggle the display of filenames. This is switched off by default.
+* `up arrow key` to switch positions of the videos upward if split horizontally, and backward if split vertically.
+* `down arrow key` to switch positions of videos downward if split horizontally, and forward if split vertically.
     
 # More info
 * Videos will dynamically adapt to availability of video frames. So if two videos are played, where one ends after 1 minute and the other continues playing, the display will dynamically adapt to stop showing the first video when it no longer has any frames to display.
@@ -30,4 +32,6 @@ The maximum number of videos supported is the lowest value of the number of rows
 * Add more key and mouse controls.
 * Add more video metadata on-screen.
 * Add support for multiple monitors
+* Options for seeking to a specific point in the video and moving forward and backward.
+* Video speed adjustment.
 * Compare video quality objectively (https://superuser.com/a/338734/55249)

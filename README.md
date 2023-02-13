@@ -29,3 +29,4 @@ The maximum number of videos supported is the lowest value of the number of rows
 * Add more video metadata displays on-screen.
 * Add support for multiple monitors
 * Support for showing grayscale videos (2D) along with colour videos (3D).
+* Compare video quality objectively (https://superuser.com/a/338734/55249)

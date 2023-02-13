@@ -4,6 +4,7 @@ import math
 import numpy as np
 from operatingSystem import screen
 from loguru import logger as log
+from collections import namedtuple
 
 class Const:
     FIRST_LIST_ELEMENT = 0
@@ -36,14 +37,16 @@ class VideoFile:
         self.y1 = None #start y coordinate for portion of split video to display
         self.x2 = None #end x coordinate for portion of split video to display
         self.y2 = None #end y coordinate for portion of split video to display
-        self.padding = self.makePaddingEmptyArray()
+        self.padding = namedtuple('Padding', 'top bottom left right')
+        self.setPadding(0, 0, 0, 0)
+        #self.padding = self.makePaddingEmptyArray()
     
-    def makePaddingEmptyArray(self):
-        self.padding = np.array(None)
+    def setPadding(self, top, bottom, left, right):
+        self.padding.top = top; self.padding.bottom = bottom; self.padding.left = left; self.padding.right = right
 
-    def createPadding(self, frame, paddingWidth, paddingHeight):
-        if len(frame.shape) == Const.RGB_VIDEO_DIMENSION_LEN:#is a video with (height, width, RGB depth)
-            self.padding = np.zeros((paddingHeight, paddingWidth, Const.RGB_VIDEO_DIMENSION_LEN))
+    # def createPadding(self, frame, paddingWidth, paddingHeight):
+    #     if len(frame.shape) == Const.RGB_VIDEO_DIMENSION_LEN:#is a video with (height, width, RGB depth)
+    #         self.padding = np.zeros((paddingHeight, paddingWidth, Const.RGB_VIDEO_DIMENSION_LEN))
 
 #Note: It's not necessary that all videos will have the same dimensions, codec or framerate
 class VideoProcessor:
@@ -72,26 +75,38 @@ class VideoProcessor:
         self.determineVideoSplitType(videos)
         widths = set([video.width for video in videos])
         heights = set([video.height for video in videos])
-        maxWidth = max(widths)#; minWidth = min(widths)
-        maxHeight = max(heights)#; minHeight = min(heights)        
+        self.maxWidth = max(widths)#; minWidth = min(widths)
+        self.maxHeight = max(heights)#; minHeight = min(heights)        
         #---find coordinates to split each video into and the padding it needs
         splitPercentage = 1 / len(videos)
         ordinal = 0#; FIRST_VIDEO = 0; LAST_VIDEO = len(videos)-1
+        print(f"---new split dimensions. SplitType: {self.videoSplitType}")
         for video in videos:            
+            top = 0; bottom = self.maxHeight - video.height; left = 0; right = 0 #padding values
             if self.videoSplitType == VideoSplit.VERTICAL:
                 video.y1 = 0; video.y2 = video.height
                 video.x1 = math.floor(ordinal * (video.width * splitPercentage))
                 video.x2 = math.floor(video.x1 + (video.width * splitPercentage))
                 #---padding calculation
-                if video.y2 == maxHeight: video.makePaddingEmptyArray() #no need of padding, since the video is as big as the largest video
-                else: video.createPadding(videos[video], video.x2 - video.x1, maxHeight - video.y2)                
+                if video.height != self.maxHeight: #video.makePaddingEmptyArray() #no need of padding, since the video is as big as the largest video
+                    bottom = self.maxHeight - video.height
+                    
+                    #videos[video] = cv2.copyMakeBorder(videos[video], top, bottom, left, right, cv2.BORDER_CONSTANT)
+                    print(f"w {video.width} h {video.height}. Padding bottom {bottom}")
+                else: print(f"{video.height}={self.maxHeight}. No padding needed")
+                #else: video.createPadding(videos[video], video.x2 - video.x1, maxHeight - video.y2)                
             if self.videoSplitType == VideoSplit.HORIZONTAL:
                 video.x1 = 0; video.x2 = video.width
                 video.y1 = math.floor(ordinal * (video.height * splitPercentage))
                 video.y2 = math.floor(video.y1 + (video.height * splitPercentage))                
                 #---padding calculation
-                if video.x2 == maxWidth: video.makePaddingEmptyArray() #no need of padding, since the video is as big as the largest video
-                else: video.createPadding(videos[video], maxWidth - video.x2, video.y2 - video.y1)
+                if video.width != self.maxWidth: #video.makePaddingEmptyArray() #no need of padding, since the video is as big as the largest video
+                    right = self.maxWidth - video.width
+                    #videos[video] = cv2.copyMakeBorder(videos[video], top, bottom, left, right, cv2.BORDER_CONSTANT)
+                    print(f"w {video.width} h {video.height}. Padding right {right}")
+                else: print(f"{video.width}={self.maxWidth}. No padding needed")
+                #else: video.createPadding(videos[video], maxWidth - video.x2, video.y2 - video.y1)
+            video.setPadding(top, bottom, left, right)
             #---generate numpy array with padding
             ordinal += 1                
 
@@ -103,14 +118,20 @@ class VideoProcessor:
         if self.videoSplitType == 0: paddingAxis = 1 #the axis along which padding arrays are joined with their respective video arrays, is the opposite axis of the video slices being joined with each other
         #---join the various video slices
         joined = np.array(None); EMPTY_ARRAY = 1
+        print(f"=========== new. splitType {self.videoSplitType}")
         for video in videos:
-            newFrame = videos[video][video.y1:video.y2, video.x1:video.x2] #select region to be displayed
+            print(f"w {video.width} h {video.height} vid {video}")
+            #---apply padding
+            videos[video] = cv2.copyMakeBorder(videos[video], video.padding.top, video.padding.bottom, video.padding.left, video.padding.right, cv2.BORDER_CONSTANT)
+            #---cut desired portion of frame
+            newFrame = videos[video][video.y1:self.maxHeight, video.x1:self.maxWidth] #select region to be displayed
+            print(f"newframe shape {newFrame.shape}")
             #---join the padding with the video slice
-            if video.padding.size != EMPTY_ARRAY: padded = np.concatenate((newFrame, video.padding), axis=paddingAxis)                
-            else: padded = newFrame
+            #if video.padding.size != EMPTY_ARRAY: padded = np.concatenate((newFrame, video.padding), axis=paddingAxis)                
+            #else: padded = newFrame
             #---join the padded video slice with the other video slices
-            if joined.size == EMPTY_ARRAY: joined = padded
-            else: joined = np.concatenate((joined, padded), axis=self.videoSplitType)
+            if joined.size == EMPTY_ARRAY: joined = newFrame
+            else: joined = np.concatenate((joined, newFrame), axis=self.videoSplitType)
         return joined
 
 class DisplayVideos:
@@ -127,7 +148,7 @@ class DisplayVideos:
         self.windowName = 'Comparing Videos'
         cv2.namedWindow(self.windowName, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(self.windowName, self.width, self.height)         
-        self.processor.toggleSplitAxis()
+        #self.processor.toggleSplitAxis()
         while True:
             #---iterate videos assuming that one of them might stop supplying frames eariler than the others
             activeVideos = dict()            
@@ -140,14 +161,14 @@ class DisplayVideos:
             if not activeVideos:#if there are no active videos remaining
                 break #exit while            
             joined = self.processor.splitAndArrangeVideoPieces(activeVideos)            
-            cv2.imshow(self.windowName, joined)       
+            cv2.imshow(self.windowName, joined) 
             keyCode = cv2.waitKey(self.defaultDelay) & 0xFF #https://stackoverflow.com/questions/57690899/how-cv2-waitkey1-0xff-ordq-works
             if keyCode == KeyCodes.ESC:
                 break
             if keyCode == KeyCodes.SPACEBAR:
                 time.sleep(1)
             if keyCode == ord('s') or keyCode == ord('S'):#to split the video horizontally
-                self.processor.toggleSplitAxis()
+                self.processor.toggleSplitAxis()            
             #time.sleep(0.05) #0.05 is 50 millisecond
         self.close()
 

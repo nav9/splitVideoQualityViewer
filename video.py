@@ -126,7 +126,6 @@ class VideoProcessor:
         #---join the various video slices
         joined = np.array(None); EMPTY_ARRAY = 1   
         linePosition = 0; linePositions = []; previousStartPosition = 0
-        #filenamePosition = []
         for video in videos:
             #---apply padding
             videos[video] = cv2.copyMakeBorder(videos[video], video.padding.top, video.padding.bottom, video.padding.left, video.padding.right, cv2.BORDER_CONSTANT)
@@ -139,15 +138,15 @@ class VideoProcessor:
             #---join the padded video slice with the other video slices
             if joined.size == EMPTY_ARRAY: joined = newFrame
             else: joined = np.concatenate((joined, newFrame), axis=self.videoSplitType)
-            #---gather the positions required to draw a line separating the videos              
-            if self.drawLineSeparatingVideos:     
-                if self.videoSplitType == VideoSplit.VERTICAL: linePosition = linePosition + newFrame.shape[Const.SECOND_LIST_ELEMENT]
-                if self.videoSplitType == VideoSplit.HORIZONTAL: linePosition = linePosition + newFrame.shape[Const.FIRST_LIST_ELEMENT]
+            #---gather the positions required to draw a line separating the videos                          
+            if self.videoSplitType == VideoSplit.VERTICAL: linePosition = linePosition + newFrame.shape[Const.SECOND_LIST_ELEMENT] #needs to be calculated for filename text position
+            if self.videoSplitType == VideoSplit.HORIZONTAL: linePosition = linePosition + newFrame.shape[Const.FIRST_LIST_ELEMENT] #needs to be calculated for filename text position
+            if self.drawLineSeparatingVideos:                     
                 linePositions.append(linePosition)    # TODO: modify this to make it calculate only once   
             if self.showFilename:
                 if self.videoSplitType == VideoSplit.VERTICAL: video.textPosition = (previousStartPosition + self.filenameHorizontalOffset, self.maxHeight - self.filenameVerticalOffset)
                 if self.videoSplitType == VideoSplit.HORIZONTAL: video.textPosition = (0 + self.filenameHorizontalOffset, previousStartPosition + self.filenameVerticalOffset)
-                #filenamePosition.append(previousStartPosition)   # TODO: modify this to make it calculate only once   
+                cv2.putText(img=joined, text=video.videoFileName, org=video.textPosition, fontFace=self.font, fontScale=self.fontScale, color=self.fontColor, thickness=self.fontThickness, lineType=cv2.LINE_AA)                    
             previousStartPosition = linePosition         
         #---draw a line separating the videos
         if self.drawLineSeparatingVideos:     
@@ -157,10 +156,6 @@ class VideoProcessor:
                 if self.videoSplitType == VideoSplit.HORIZONTAL:
                     point1 = (0, pos); point2 = (self.maxWidth, pos)                                    
                 cv2.line(img=joined, pt1=point1, pt2=point2, color=self.splitLineColor, thickness=self.lineThickness, lineType=self.lineType, shift=0)
-        #---display video name
-        if self.showFilename:     
-            for video in videos: 
-                cv2.putText(img=joined, text=video.videoFileName, org=video.textPosition, fontFace=self.font, fontScale=self.fontScale, color=self.fontColor, thickness=self.fontThickness, lineType=cv2.LINE_AA)                    
         return joined
 
 class DisplayVideos:

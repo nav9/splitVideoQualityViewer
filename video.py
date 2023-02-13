@@ -142,7 +142,7 @@ class VideoProcessor:
             if self.videoSplitType == VideoSplit.VERTICAL: linePosition = linePosition + newFrame.shape[Const.SECOND_LIST_ELEMENT] #needs to be calculated for filename text position
             if self.videoSplitType == VideoSplit.HORIZONTAL: linePosition = linePosition + newFrame.shape[Const.FIRST_LIST_ELEMENT] #needs to be calculated for filename text position
             if self.drawLineSeparatingVideos:                     
-                linePositions.append(linePosition)    # TODO: modify this to make it calculate only once   
+                linePositions.append(linePosition)    # TODO: modify this to make it calculate positions only during calculateSplitDimensionsAndPaddings
             if self.showFilename:
                 if self.videoSplitType == VideoSplit.VERTICAL: video.textPosition = (previousStartPosition + self.filenameHorizontalOffset, self.maxHeight - self.filenameVerticalOffset)
                 if self.videoSplitType == VideoSplit.HORIZONTAL: video.textPosition = (0 + self.filenameHorizontalOffset, previousStartPosition + self.filenameVerticalOffset)

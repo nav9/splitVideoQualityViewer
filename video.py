@@ -11,8 +11,8 @@ class Const:
     SECOND_LIST_ELEMENT = 0
     # MOUSE_HOVER_SPLIT_MAX_VIDEO = 4 #If MAX_SIMULTANEOUS_VIDEO_DISPLAY exceeds MOUSE_HOVER_SPLIT_MAX_VIDEO, the mouse hover (which dynamically alters the video split position) capability won't be available
     MAX_SIMULTANEOUS_VIDEO_DISPLAY = 8 #maximum number of videos that can be shown at once (feel free to increase this number as per the hardware capability of your computer). 
-    NUMPY_HORIZONTAL_AXIS = 0
-    NUMPY_VERTICAL_AXIS = 1
+    #NUMPY_HORIZONTAL_AXIS = 0
+    #NUMPY_VERTICAL_AXIS = 1
     RGB_VIDEO_DIMENSION_LEN = 3
 
 class VideoSplit:#The maximum number of splits will be approximately 10% of the smallest video's width or height (depending on whether it is split vertically or horizontally)
@@ -63,15 +63,15 @@ class VideoProcessor:
 
     def determineVideoSplitType(self, videos):
         if len(videos) > 1 and self.videoSplitType == VideoSplit.NONE: #if the videoSplitType has never neen assigned based on the number of videos (when there are more than 1 video)
-            self.videoSplitType = Const.NUMPY_VERTICAL_AXIS #the default
+            self.videoSplitType = VideoSplit.VERTICAL #the default
 
     def toggleSplitAxis(self, videos):
-        print(f"axis before {self.videoSplitType}")
         if self.videoSplitType == VideoSplit.NONE: log.error(f"No split type has been set yet. You can only set it after any valid video is detected. Also, there's no point setting a split type when there's only one video.")
-        if self.videoSplitType == Const.NUMPY_HORIZONTAL_AXIS: self.videoSplitType = Const.NUMPY_VERTICAL_AXIS
-        if self.videoSplitType == Const.NUMPY_VERTICAL_AXIS: self.videoSplitType = Const.NUMPY_HORIZONTAL_AXIS
+        else:
+            if self.videoSplitType == VideoSplit.HORIZONTAL: self.videoSplitType = VideoSplit.VERTICAL
+            else:
+                if self.videoSplitType == VideoSplit.VERTICAL: self.videoSplitType = VideoSplit.HORIZONTAL
         self.calculateSplitDimensionsAndPaddings(videos)
-        print(f"axis after {self.videoSplitType}")
 
     #https://stackoverflow.com/questions/43391205/add-padding-to-images-to-get-them-into-the-same-shape
     def calculateSplitDimensionsAndPaddings(self, videos):#if videos are of different sizes, to join pieces of their frames, you need to pad the remaining space with zeroes
@@ -170,6 +170,7 @@ class DisplayVideos:
             if keyCode == KeyCodes.SPACEBAR:
                 time.sleep(1)
             if keyCode == ord('s') or keyCode == ord('S'):#to split the video horizontally
+                print("\n\n\n\n TOGGLE DETECTED \n\n\n\n")
                 self.processor.toggleSplitAxis(activeVideos)            
             #time.sleep(0.05) #0.05 is 50 millisecond
         self.close()

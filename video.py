@@ -52,7 +52,7 @@ class VideoProcessor:
         self.drawLineSeparatingVideos = True
         self.splitLineColor = (255, 255, 255) #TODO: Draw half the line as black and half as white (or contrast it based on background pixel color)
         self.lineThickness = 1
-        self.lineType = 8
+        self.lineType = 16
 
     def determineVideoSplitType(self, videos):
         if len(videos) > 1 and self.videoSplitType == VideoSplit.NONE: #if the videoSplitType has never neen assigned based on the number of videos (when there are more than 1 video)
@@ -110,8 +110,7 @@ class VideoProcessor:
             self.videoOrder = list(videos.keys())
         #---join the various video slices
         joined = np.array(None); EMPTY_ARRAY = 1   
-        linePosition = 0     
-        linePositions = []
+        linePosition = 0; linePositions = []
         for video in videos:
             #---apply padding
             videos[video] = cv2.copyMakeBorder(videos[video], video.padding.top, video.padding.bottom, video.padding.left, video.padding.right, cv2.BORDER_CONSTANT)
@@ -129,11 +128,11 @@ class VideoProcessor:
                 if self.videoSplitType == VideoSplit.VERTICAL: linePosition = linePosition + newFrame.shape[Const.SECOND_LIST_ELEMENT]
                 if self.videoSplitType == VideoSplit.HORIZONTAL: linePosition = linePosition + newFrame.shape[Const.FIRST_LIST_ELEMENT]
                 linePositions.append(linePosition)                
-        #---draw a line separating the videos        
+        #---draw a line separating the videos   
         if self.drawLineSeparatingVideos:     
             for pos in linePositions:                       
                 if self.videoSplitType == VideoSplit.VERTICAL:
-                    point1 = (pos, 0); point2 = (pos, self.maxHeight)                    
+                    point1 = (pos, 0); point2 = (pos, self.maxHeight)                 
                 if self.videoSplitType == VideoSplit.HORIZONTAL:
                     point1 = (0, pos); point2 = (self.maxWidth, pos)
                 cv2.line(img=joined, pt1=point1, pt2=point2, color=self.splitLineColor, thickness=self.lineThickness, lineType=self.lineType, shift=0)

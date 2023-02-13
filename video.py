@@ -2,6 +2,7 @@ import sys
 import cv2
 import time
 import math
+import ntpath
 import numpy as np
 from operatingSystem import screen
 from loguru import logger as log
@@ -28,6 +29,7 @@ class VideoFile:
     """ Stores properties of the video """
     def __init__(self, videoNameWithPath) -> None:
         self.videoName = videoNameWithPath
+        self.videoFileName = ntpath.basename(self.videoName)
         self.video = cv2.VideoCapture(self.videoName)
         self.height = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -50,9 +52,17 @@ class VideoProcessor:
         self.videoOrder = []
         self.allowMouseHover = False
         self.drawLineSeparatingVideos = True
+        self.showFilename = True
         self.splitLineColor = (255, 255, 255) #TODO: Draw half the line as black and half as white (or contrast it based on background pixel color)
         self.lineThickness = 1
-        self.lineType = 16
+        self.lineType = cv2.LINE_AA
+        self.font = cv2.FONT_HERSHEY_SIMPLEX
+        self.fontThickness = 1
+        self.fontScale = 0.4
+        self.fontLineType = cv2.LINE_AA
+        self.fontColor = (100, 100, 100)  
+        self.filenameVerticalOffset = 10                        
+        self.filenameHorizontalOffset = 2
 
     def determineVideoSplitType(self, videos):
         if len(videos) > 1 and self.videoSplitType == VideoSplit.NONE: #if the videoSplitType has never neen assigned based on the number of videos (when there are more than 1 video)
@@ -74,6 +84,10 @@ class VideoProcessor:
         if self.drawLineSeparatingVideos: self.drawLineSeparatingVideos = False
         else: self.drawLineSeparatingVideos = True            
         self.hideLineSeparatorIfOnlyOneVideoPresent(videos)
+
+    def toggleFileNameDisplay(self):
+        if self.showFilename: self.showFilename = False
+        else: self.showFilename = True
 
     def calculateSplitDimensionsAndPaddings(self, videos):#if videos are of different sizes, to join pieces of their frames, you need to pad the remaining space with zeroes
         #Note: videos is a dict {video object reference: video frame}. The frame is a numpy array (videoHeight, videoWidth, rgb axis)
@@ -110,7 +124,8 @@ class VideoProcessor:
             self.videoOrder = list(videos.keys())
         #---join the various video slices
         joined = np.array(None); EMPTY_ARRAY = 1   
-        linePosition = 0; linePositions = []
+        linePosition = 0; linePositions = []; previousStartPosition = 0
+        filenamePosition = []
         for video in videos:
             #---apply padding
             videos[video] = cv2.copyMakeBorder(videos[video], video.padding.top, video.padding.bottom, video.padding.left, video.padding.right, cv2.BORDER_CONSTANT)
@@ -123,19 +138,27 @@ class VideoProcessor:
             #---join the padded video slice with the other video slices
             if joined.size == EMPTY_ARRAY: joined = newFrame
             else: joined = np.concatenate((joined, newFrame), axis=self.videoSplitType)
-            #---gather the positions required to draw a line separating the videos     
+            #---gather the positions required to draw a line separating the videos 
+            # TODO: modify this to make it calculate only once    
             if self.drawLineSeparatingVideos:     
                 if self.videoSplitType == VideoSplit.VERTICAL: linePosition = linePosition + newFrame.shape[Const.SECOND_LIST_ELEMENT]
                 if self.videoSplitType == VideoSplit.HORIZONTAL: linePosition = linePosition + newFrame.shape[Const.FIRST_LIST_ELEMENT]
-                linePositions.append(linePosition)                
-        #---draw a line separating the videos   
+                linePositions.append(linePosition)    
+            if self.showFilename:
+                filenamePosition.append(previousStartPosition)   
+            previousStartPosition = linePosition         
+        #---draw a line separating the videos
         if self.drawLineSeparatingVideos:     
             for pos in linePositions:                       
                 if self.videoSplitType == VideoSplit.VERTICAL:
                     point1 = (pos, 0); point2 = (pos, self.maxHeight)                 
                 if self.videoSplitType == VideoSplit.HORIZONTAL:
-                    point1 = (0, pos); point2 = (self.maxWidth, pos)
+                    point1 = (0, pos); point2 = (self.maxWidth, pos)                                    
                 cv2.line(img=joined, pt1=point1, pt2=point2, color=self.splitLineColor, thickness=self.lineThickness, lineType=self.lineType, shift=0)
+        #---display video name
+        if self.showFilename:     
+            for pos in filenamePosition:                     
+                cv2.putText(img=joined, text=video.videoFileName, org=(pos + self.filenameHorizontalOffset, self.maxHeight - self.filenameVerticalOffset), fontFace=self.font, fontScale=self.fontScale, color=self.fontColor, thickness=self.fontThickness, lineType=cv2.LINE_AA)
         return joined
 
 class DisplayVideos:
@@ -175,6 +198,8 @@ class DisplayVideos:
                 self.processor.toggleSplitAxis(activeVideos)            
             if keyCode == ord('l') or keyCode == ord('L'):#to show a line where the video is separated from other videos (no line is shown if only one video is present)
                 self.processor.toggleLineSeparator(activeVideos)
+            if keyCode == ord('n') or keyCode == ord('N'):#to show a line where the video is separated from other videos (no line is shown if only one video is present)
+                self.processor.toggleFileNameDisplay()                
             #time.sleep(0.05) #0.05 is 50 millisecond
         self.close()
 

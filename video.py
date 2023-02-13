@@ -8,7 +8,7 @@ from collections import namedtuple
 
 class Const:
     FIRST_LIST_ELEMENT = 0
-    SECOND_LIST_ELEMENT = 0
+    SECOND_LIST_ELEMENT = 1
     # MOUSE_HOVER_SPLIT_MAX_VIDEO = 4 #If MAX_SIMULTANEOUS_VIDEO_DISPLAY exceeds MOUSE_HOVER_SPLIT_MAX_VIDEO, the mouse hover (which dynamically alters the video split position) capability won't be available
     MAX_SIMULTANEOUS_VIDEO_DISPLAY = 8 #maximum number of videos that can be shown at once (feel free to increase this number as per the hardware capability of your computer). 
     RGB_VIDEO_DIMENSION_LEN = 3
@@ -47,6 +47,7 @@ class VideoProcessor:
         self.videoSplitType = VideoSplit.NONE
         self.videoOrder = []
         self.allowMouseHover = False
+        self.drawLineSeparatingVideos = True
         self.splitLineColor = (255, 255, 255) #TODO: Draw half the line as black and half as white (or contrast it based on background pixel color)
         self.lineThickness = 1
         self.lineType = 8
@@ -62,10 +63,20 @@ class VideoProcessor:
             else:
                 if self.videoSplitType == VideoSplit.VERTICAL: self.videoSplitType = VideoSplit.HORIZONTAL
         self.calculateSplitDimensionsAndPaddings(videos)
+    
+    def hideLineSeparatorIfOnlyOneVideoPresent(self, videos):
+        if len(videos) == 1:
+            self.drawLineSeparatingVideos = False
+
+    def toggleLineSeparator(self, videos):        
+        if self.drawLineSeparatingVideos: self.drawLineSeparatingVideos = False
+        else: self.drawLineSeparatingVideos = True            
+        self.hideLineSeparatorIfOnlyOneVideoPresent(videos)
 
     def calculateSplitDimensionsAndPaddings(self, videos):#if videos are of different sizes, to join pieces of their frames, you need to pad the remaining space with zeroes
         #Note: videos is a dict {video object reference: video frame}. The frame is a numpy array (videoHeight, videoWidth, rgb axis)
         self.determineVideoSplitType(videos)
+        self.hideLineSeparatorIfOnlyOneVideoPresent(videos)
         widths = set([video.width for video in videos])
         heights = set([video.height for video in videos])
         self.maxWidth = max(widths)#; minWidth = min(widths)
@@ -96,18 +107,33 @@ class VideoProcessor:
             self.calculateSplitDimensionsAndPaddings(videos)
             self.videoOrder = list(videos.keys())
         #---join the various video slices
-        joined = np.array(None); EMPTY_ARRAY = 1
+        joined = np.array(None); EMPTY_ARRAY = 1   
+        linePosition = 0     
+        linePositions = []
         for video in videos:
             #---apply padding
             videos[video] = cv2.copyMakeBorder(videos[video], video.padding.top, video.padding.bottom, video.padding.left, video.padding.right, cv2.BORDER_CONSTANT)
             #---cut desired portion of frame
             if self.videoSplitType == VideoSplit.VERTICAL:
-                newFrame = videos[video][0:self.maxHeight, video.sliceStart:video.sliceEnd] #select region to be displayed
+                newFrame = videos[video][Const.FIRST_LIST_ELEMENT:self.maxHeight, video.sliceStart:video.sliceEnd] #select region to be displayed
             if self.videoSplitType == VideoSplit.HORIZONTAL:
-                newFrame = videos[video][video.sliceStart:video.sliceEnd, 0:self.maxWidth] #select region to be displayed
+                newFrame = videos[video][video.sliceStart:video.sliceEnd, Const.FIRST_LIST_ELEMENT:self.maxWidth] #select region to be displayed
             #---join the padded video slice with the other video slices
             if joined.size == EMPTY_ARRAY: joined = newFrame
             else: joined = np.concatenate((joined, newFrame), axis=self.videoSplitType)
+            #---gather the positions required to draw a line separating the videos     
+            if self.drawLineSeparatingVideos:     
+                if self.videoSplitType == VideoSplit.VERTICAL: linePosition = linePosition + newFrame.shape[Const.SECOND_LIST_ELEMENT]
+                if self.videoSplitType == VideoSplit.HORIZONTAL: linePosition = linePosition + newFrame.shape[Const.FIRST_LIST_ELEMENT]
+                linePositions.append(linePosition)                
+        #---draw a line separating the videos        
+        if self.drawLineSeparatingVideos:     
+            for pos in linePositions:                       
+                if self.videoSplitType == VideoSplit.VERTICAL:
+                    point1 = (pos, 0); point2 = (pos, self.maxHeight)                    
+                if self.videoSplitType == VideoSplit.HORIZONTAL:
+                    point1 = (0, pos); point2 = (self.maxWidth, pos)
+                cv2.line(img=joined, pt1=point1, pt2=point2, color=self.splitLineColor, thickness=self.lineThickness, lineType=self.lineType, shift=0)
         return joined
 
 class DisplayVideos:
@@ -142,8 +168,10 @@ class DisplayVideos:
                 break
             if keyCode == KeyCodes.SPACEBAR:
                 time.sleep(1)
-            if keyCode == ord('t') or keyCode == ord('T'):#to split the video horizontally
+            if keyCode == ord('a') or keyCode == ord('A'):#to split the video horizontally or vertically
                 self.processor.toggleSplitAxis(activeVideos)            
+            if keyCode == ord('l') or keyCode == ord('L'):#to show a line where the video is separated from other videos (no line is shown if only one video is present)
+                self.processor.toggleLineSeparator(activeVideos)
             #time.sleep(0.05) #0.05 is 50 millisecond
         self.close()
 

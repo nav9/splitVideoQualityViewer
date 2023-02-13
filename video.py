@@ -52,7 +52,7 @@ class VideoProcessor:
         self.videoOrder = []
         self.allowMouseHover = False
         self.drawLineSeparatingVideos = True
-        self.showFilename = True
+        self.showFilename = False
         self.splitLineColor = (255, 255, 255) #TODO: Draw half the line as black and half as white (or contrast it based on background pixel color)
         self.lineThickness = 1
         self.lineType = cv2.LINE_AA
@@ -61,7 +61,7 @@ class VideoProcessor:
         self.fontScale = 0.4
         self.fontLineType = cv2.LINE_AA
         self.fontColor = (100, 100, 100)  
-        self.filenameVerticalOffset = 10                        
+        self.filenameVerticalOffset = 10                     
         self.filenameHorizontalOffset = 2
 
     def determineVideoSplitType(self, videos):
@@ -138,14 +138,13 @@ class VideoProcessor:
             #---join the padded video slice with the other video slices
             if joined.size == EMPTY_ARRAY: joined = newFrame
             else: joined = np.concatenate((joined, newFrame), axis=self.videoSplitType)
-            #---gather the positions required to draw a line separating the videos 
-            # TODO: modify this to make it calculate only once    
+            #---gather the positions required to draw a line separating the videos              
             if self.drawLineSeparatingVideos:     
                 if self.videoSplitType == VideoSplit.VERTICAL: linePosition = linePosition + newFrame.shape[Const.SECOND_LIST_ELEMENT]
                 if self.videoSplitType == VideoSplit.HORIZONTAL: linePosition = linePosition + newFrame.shape[Const.FIRST_LIST_ELEMENT]
-                linePositions.append(linePosition)    
+                linePositions.append(linePosition)    # TODO: modify this to make it calculate only once   
             if self.showFilename:
-                filenamePosition.append(previousStartPosition)   
+                filenamePosition.append(previousStartPosition)   # TODO: modify this to make it calculate only once   
             previousStartPosition = linePosition         
         #---draw a line separating the videos
         if self.drawLineSeparatingVideos:     
@@ -157,8 +156,11 @@ class VideoProcessor:
                 cv2.line(img=joined, pt1=point1, pt2=point2, color=self.splitLineColor, thickness=self.lineThickness, lineType=self.lineType, shift=0)
         #---display video name
         if self.showFilename:     
-            for pos in filenamePosition:                     
-                cv2.putText(img=joined, text=video.videoFileName, org=(pos + self.filenameHorizontalOffset, self.maxHeight - self.filenameVerticalOffset), fontFace=self.font, fontScale=self.fontScale, color=self.fontColor, thickness=self.fontThickness, lineType=cv2.LINE_AA)
+            for pos in filenamePosition: 
+                if self.videoSplitType == VideoSplit.VERTICAL:                    
+                    cv2.putText(img=joined, text=video.videoFileName, org=(pos + self.filenameHorizontalOffset, self.maxHeight - self.filenameVerticalOffset), fontFace=self.font, fontScale=self.fontScale, color=self.fontColor, thickness=self.fontThickness, lineType=cv2.LINE_AA)
+                if self.videoSplitType == VideoSplit.HORIZONTAL:
+                    cv2.putText(img=joined, text=video.videoFileName, org=(0 + self.filenameHorizontalOffset, pos + self.filenameVerticalOffset), fontFace=self.font, fontScale=self.fontScale, color=self.fontColor, thickness=self.fontThickness, lineType=cv2.LINE_AA)
         return joined
 
 class DisplayVideos:

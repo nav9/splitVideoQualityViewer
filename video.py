@@ -24,6 +24,13 @@ class VideoSplit:
 class KeyCodes:
     ESC = 27
     SPACEBAR = 32
+    UP_ARROW = 82
+    DOWN_ARROW = 84
+    LEFT_ARROW = 81
+    RIGHT_ARROW = 83
+    SPLIT_DIRECTION = 'A'
+    SHOW_LINE_SPLITTER = 'L'
+    SHOW_NAME = 'N'
 
 class VideoFile:
     """ Stores properties of the video """
@@ -191,13 +198,20 @@ class DisplayVideos:
                 break
             if keyCode == KeyCodes.SPACEBAR:
                 time.sleep(1)
-            if keyCode == ord('a') or keyCode == ord('A'):#to split the video horizontally or vertically
+            if keyCode == KeyCodes.UP_ARROW:
+                pass
+            if keyCode == KeyCodes.DOWN_ARROW:
+                pass
+            if keyCode == KeyCodes.LEFT_ARROW:
+                pass
+            if keyCode == KeyCodes.RIGHT_ARROW:
+                pass                                          
+            if keyCode == ord(KeyCodes.SPLIT_DIRECTION) or keyCode == ord(KeyCodes.SPLIT_DIRECTION.lower()):#to split the video horizontally or vertically
                 self.processor.toggleSplitAxis(activeVideos)            
-            if keyCode == ord('l') or keyCode == ord('L'):#to show a line where the video is separated from other videos (no line is shown if only one video is present)
+            if keyCode == ord(KeyCodes.SHOW_LINE_SPLITTER) or keyCode == ord(KeyCodes.SHOW_LINE_SPLITTER.lower()):#to show a line where the video is separated from other videos (no line is shown if only one video is present)
                 self.processor.toggleLineSeparator(activeVideos)
-            if keyCode == ord('n') or keyCode == ord('N'):#to show a line where the video is separated from other videos (no line is shown if only one video is present)
+            if keyCode == ord(KeyCodes.SHOW_NAME) or keyCode == ord(KeyCodes.SHOW_NAME.lower()):#to show a line where the video is separated from other videos (no line is shown if only one video is present)
                 self.processor.toggleFileNameDisplay()                
-            #time.sleep(0.05) #0.05 is 50 millisecond
         self.close()
 
     def close(self):

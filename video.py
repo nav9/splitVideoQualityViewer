@@ -1,3 +1,4 @@
+import sys
 import cv2
 import time
 import math
@@ -11,12 +12,13 @@ class Const:
     SECOND_LIST_ELEMENT = 1
     # MOUSE_HOVER_SPLIT_MAX_VIDEO = 4 #If MAX_SIMULTANEOUS_VIDEO_DISPLAY exceeds MOUSE_HOVER_SPLIT_MAX_VIDEO, the mouse hover (which dynamically alters the video split position) capability won't be available
     MAX_SIMULTANEOUS_VIDEO_DISPLAY = 8 #maximum number of videos that can be shown at once (feel free to increase this number as per the hardware capability of your computer). 
-    RGB_VIDEO_DIMENSION_LEN = 3
+    RGB_VIDEO_DIMENSION_LEN = 3    
 
-class VideoSplit:#The maximum number of splits will be approximately 10% of the smallest video's width or height (depending on whether it is split vertically or horizontally)
+class VideoSplit:
     NONE = None #There's only one video or none
     HORIZONTAL = 0 #videos will be split horizontally. To show 6 videos, there will be 5 splits horizontally. Video split position can change on mouse hover only if there are 2 videos.
     VERTICAL = 1 #videos will be split vertically. So to show 8 videos, there will be 7 vertical splits. Video split position can change on mouse hover only if there are 2 videos.
+    MIN_NUMBER_OF_PIXELS_SHOWN = 5 #When videos are split, at least 5 pixels of each video should be visible. This is used to determine the maximum number of videos that can be shown simultaneously
 
 class KeyCodes:
     ESC = 27
@@ -140,6 +142,7 @@ class DisplayVideos:
     """ Receives video frames and displays videos together """
     def __init__(self, videoLocations) -> None:
         self.videos = [VideoFile(videoFile) for videoFile in videoLocations]
+        self.checkMaxSupportedVideos()
         self.framerate = self.findMaxFramerate()
         self.width, self.height = self.findMaxDisplaySize()
         self.defaultDelay = int(self.framerate)  
@@ -185,11 +188,21 @@ class DisplayVideos:
         """ Returns the maximum width of any video and maximum height of any video in the list of videos """
         monitor = screen.MonitorInfo()
         monitorWidth, monitorHeight = monitor.getMonitorDimensions()
-        width = max(set([video.width for video in self.videos]))
-        height = max(set([video.height for video in self.videos]))
+        width = max([video.width for video in self.videos])
+        height = max([video.height for video in self.videos])
         if width > monitorWidth or height > monitorHeight:
             log.warning(f"\n\nYour primary monitor width {monitorWidth} and height {monitorHeight} are less than the video width {width} and height {height}.")
         return width, height
+
+    def checkMaxSupportedVideos(self):
+        """ Checks if the number of pixels in the videos supplied can be displayed in split format """
+        width = min([video.width for video in self.videos])
+        height = min([video.height for video in self.videos])
+        maxVideosAllowed = min([width, height]) / VideoSplit.MIN_NUMBER_OF_PIXELS_SHOWN 
+        log.info(f"{len(self.videos)} videos supplied. {maxVideosAllowed} videos supported. Each video should show a minimum of {VideoSplit.MIN_NUMBER_OF_PIXELS_SHOWN} pixels") 
+        if len(self.videos) > maxVideosAllowed:
+            log.error(f"You supplied {len(self.videos)} videos, but only {maxVideosAllowed} videos are supported because at least {VideoSplit.MIN_NUMBER_OF_PIXELS_SHOWN} pixels of each video needs to be visible when split")
+            sys.exit()
 
     def findMaxFramerate(self):
         """ Returns the maximum framerate among all videos """

@@ -202,7 +202,7 @@ class DisplayVideos:
         maxVideosAllowed = min([width, height]) / VideoSplit.MIN_NUMBER_OF_PIXELS_SHOWN 
         log.info(f"{len(self.videos)} videos supplied. {maxVideosAllowed} videos supported. Each video should show a minimum of {VideoSplit.MIN_NUMBER_OF_PIXELS_SHOWN} pixels") 
         if len(self.videos) > maxVideosAllowed:
-            log.error(f"You supplied {len(self.videos)} videos, but only {maxVideosAllowed} videos are supported because at least {VideoSplit.MIN_NUMBER_OF_PIXELS_SHOWN} pixels of each video needs to be visible when split")
+            log.error(f"Either you are trying to play video formats that aren't supported, or you supplied {len(self.videos)} videos, but only {maxVideosAllowed} videos are supported because at least {VideoSplit.MIN_NUMBER_OF_PIXELS_SHOWN} pixels of each video needs to be visible when split")
             sys.exit()
 
     def findMaxFramerate(self):

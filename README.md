@@ -18,10 +18,10 @@ The maximum number of videos supported is the lowest value of the number of rows
 * `A` or `a` to toggle the axis of split (horizontal or vertical).
 * `L` or `l` to toggle the display of the line separating the videos. No line will be shown if only one video is being played.
     
-# Extra functionality explanation
+# More info
 * Videos will dynamically adapt to availability of video frames. So if two videos are played, where one ends after 1 minute and the other continues playing, the display will dynamically adapt to stop showing the first video when it no longer has any frames to display.
 * No audio is played, since multiple videos may be involved. Also, the focus is on visual quality evaluation.
-* Tested filetypes: mkv, mp4 (though it should support any video file that Python OpenCV supports).
+* Tested video formats: mkv, avi, mxf, flv, ogx, mp4, hevc, swf, m2ts, ts, m2v, vob, mjpeg, webm, mkv, wmv, mov, wtv, mpeg, 3gp, mpg, asf, mts (theoretically, it should support any video file that Python's OpenCV package supports).
   
 # TODO
 * Videos of two different framerates.

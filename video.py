@@ -65,9 +65,13 @@ class VideoProcessor:
         if len(videos) > 1 and self.videoSplitType == VideoSplit.NONE: #if the videoSplitType has never neen assigned based on the number of videos (when there are more than 1 video)
             self.videoSplitType = Const.NUMPY_VERTICAL_AXIS #the default
 
-    def toggleSplitAxis(self):
+    def toggleSplitAxis(self, videos):
+        print(f"axis before {self.videoSplitType}")
+        if self.videoSplitType == VideoSplit.NONE: log.error(f"No split type has been set yet. You can only set it after any valid video is detected. Also, there's no point setting a split type when there's only one video.")
         if self.videoSplitType == Const.NUMPY_HORIZONTAL_AXIS: self.videoSplitType = Const.NUMPY_VERTICAL_AXIS
         if self.videoSplitType == Const.NUMPY_VERTICAL_AXIS: self.videoSplitType = Const.NUMPY_HORIZONTAL_AXIS
+        self.calculateSplitDimensionsAndPaddings(videos)
+        print(f"axis after {self.videoSplitType}")
 
     #https://stackoverflow.com/questions/43391205/add-padding-to-images-to-get-them-into-the-same-shape
     def calculateSplitDimensionsAndPaddings(self, videos):#if videos are of different sizes, to join pieces of their frames, you need to pad the remaining space with zeroes
@@ -89,8 +93,7 @@ class VideoProcessor:
                 video.x2 = math.floor(video.x1 + (video.width * splitPercentage))
                 #---padding calculation
                 if video.height != self.maxHeight: #video.makePaddingEmptyArray() #no need of padding, since the video is as big as the largest video
-                    bottom = self.maxHeight - video.height
-                    
+                    bottom = self.maxHeight - video.height                    
                     #videos[video] = cv2.copyMakeBorder(videos[video], top, bottom, left, right, cv2.BORDER_CONSTANT)
                     print(f"w {video.width} h {video.height}. Padding bottom {bottom}")
                 else: print(f"{video.height}={self.maxHeight}. No padding needed")
@@ -147,8 +150,7 @@ class DisplayVideos:
         #Concatenate images: https://stackoverflow.com/questions/7589012/combining-two-images-with-opencv
         self.windowName = 'Comparing Videos'
         cv2.namedWindow(self.windowName, cv2.WINDOW_NORMAL)
-        cv2.resizeWindow(self.windowName, self.width, self.height)         
-        #self.processor.toggleSplitAxis()
+        cv2.resizeWindow(self.windowName, self.width, self.height)                 
         while True:
             #---iterate videos assuming that one of them might stop supplying frames eariler than the others
             activeVideos = dict()            
@@ -168,7 +170,7 @@ class DisplayVideos:
             if keyCode == KeyCodes.SPACEBAR:
                 time.sleep(1)
             if keyCode == ord('s') or keyCode == ord('S'):#to split the video horizontally
-                self.processor.toggleSplitAxis()            
+                self.processor.toggleSplitAxis(activeVideos)            
             #time.sleep(0.05) #0.05 is 50 millisecond
         self.close()
 

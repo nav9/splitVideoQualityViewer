@@ -1,6 +1,27 @@
 # User defined
 *.mkv
 *.mp4
+*.3gp
+*.asf
+*.avi
+*.flv
+*.hevc
+*.m2ts
+*.m2v
+*.mjpeg
+*.mov
+*.mpeg
+*.mpg
+*.mts
+*.mxf
+*.ogx
+*.rm
+*.swf
+*.ts
+*.vob
+*.webm
+*.wmv
+*.wtv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

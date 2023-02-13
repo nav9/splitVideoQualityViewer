@@ -115,6 +115,7 @@ class VideoProcessor:
         for video in videos:
             #---apply padding
             videos[video] = cv2.copyMakeBorder(videos[video], video.padding.top, video.padding.bottom, video.padding.left, video.padding.right, cv2.BORDER_CONSTANT)
+            newFrame = videos[video]
             #---cut desired portion of frame
             if self.videoSplitType == VideoSplit.VERTICAL:
                 newFrame = videos[video][Const.FIRST_LIST_ELEMENT:self.maxHeight, video.sliceStart:video.sliceEnd] #select region to be displayed

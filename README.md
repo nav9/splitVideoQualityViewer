@@ -1,7 +1,7 @@
 ![Alt text](gallery/verticalSplit.png?raw=true "Compare videos for quality")
   
 # Purpose
-Inspired from the brilliant [Vivict](https://github.com/vivictorg/vivict) project, this program helps you visualize two videos side-by-side, with half of one video shown on the left and the other half on the right. It helps compare the quality of two videos. 
+Inspired from the brilliant [Vivict](https://github.com/vivictorg/vivict) project, this program helps you visualize multiple videos side-by-side. It helps compare the quality difference between videos. 
   
 # Install
 pip3 install -r requirements.txt
@@ -13,8 +13,14 @@ You can add more videos if you like:
 The maximum number of videos supported is the lowest value of the number of rows or columns of the smallest video, divided by 5 (where 5 is the minimum number of pixels that a video needs to display. You can change this value in the code). Displaying a lot of videos simultaneously requires a fast processor.
   
 # Controls
-* Esc to exit.
+* `Esc` to exit.
 * Spacebar to pause for one second.
+* `A` or `a` to toggle the axis of split (horizontal or vertical).
+* `L` or `l` to toggle the display of the line separating the videos. No line will be shown if only one video is being played.
+    
+# Functionality
+* Videos will dynamically adapt to availability of video frames. So if two videos are played, where one ends after 1 minute and the other continues playing, the display will dynamically adapt to stop showing the first video when it no longer has any frames to display.
+* No audio is played, since multiple videos may be involved. Also, the focus is on visual quality evaluation.
   
 # TODO
 * Videos of two different framerates.

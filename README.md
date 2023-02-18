@@ -1,4 +1,6 @@
-![Alt text](gallery/verticalSplit.png?raw=true "Compare videos for quality")
+![Alt text](gallery/verticalSplit.png?raw=true "Compare multiple videos simultaneously by vertically splitting them")  
+![Alt text](gallery/differentSizes.png?raw=true "Compare videos of varied dimensions")  
+![Alt text](gallery/greyHorizontalVaried.png?raw=true "Compare videos by horizontally splitting them and even viewing greyscale videos")  
   
 # Purpose
 Inspired from the brilliant [Vivict](https://github.com/vivictorg/vivict) project, this program helps you visualize multiple videos side-by-side. It helps compare the quality difference between videos. This project was created because Vivict didn't support some file formats, and supported the display of only two videos simultaneously.

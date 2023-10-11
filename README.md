@@ -41,3 +41,5 @@ The maximum number of videos supported, is the lowest value of the number of row
 * Options for seeking to a specific point in the video and moving forward and backward.
 * Video speed adjustment.
 * Compare video quality objectively (https://superuser.com/a/338734/55249)
+
+  [![Donate](https://raw.githubusercontent.com/nav9/VCF_contacts_merger/main/gallery/thankYouDonateButton.png)](https://nrecursions.blogspot.com/2020/08/saying-thank-you.html)  

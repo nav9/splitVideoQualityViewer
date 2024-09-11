@@ -24,8 +24,10 @@ The maximum number of videos supported, is the lowest value of the number of row
 * `A` or `a` to toggle the axis of split (horizontal or vertical). The axis is vertical by default.
 * `L` or `l` to toggle the display of the line separating the videos. This is switched on by default. No line will be shown if only one video is being played.
 * `N` or `n` to toggle the display of filenames. This is switched off by default.
-* `up arrow` to switch positions of the videos upward if split horizontally, and backward if split vertically.
-* `down arrow` to switch positions of videos downward if split horizontally, and forward if split vertically.
+* `[` to cycle positions of the videos upward if split horizontally, and backward if split vertically.
+* `]` to cycle positions of videos downward if split horizontally, and forward if split vertically.
+* `up arrow` to decrease the delay between each frame shown (speeds the video if it had been slowed). 
+* `down arrow` to increase the delay between each frame shown (slows the video).
     
 # More info
 * Videos will dynamically adapt to availability of video frames. So if two videos are played, where one ends after 1 minute and the other continues playing, the display will dynamically adapt to stop showing the first video when it no longer has any frames to display.
@@ -33,13 +35,15 @@ The maximum number of videos supported, is the lowest value of the number of row
 * Tested video formats: mkv, avi, mxf, flv, ogx, mp4, hevc, swf, m2ts, ts, m2v, vob, webm, mkv, wmv, mov, wtv, mpeg, 3gp, mpg, asf, mts (theoretically, it should support any video file that Python's OpenCV package supports).
   
 # Feature upgrades possible:
-* Videos of two different framerates.
-* Split video depending on mouse pointer position. 
+* Split video depending on mouse pointer position (possibly practical only when not more than two videos are played simultaneously). 
 * Add more key and mouse controls.
 * Add more video metadata on-screen.
 * Add support for multiple monitors
-* Options for seeking to a specific point in the video and moving forward and backward.
-* Video speed adjustment.
 * Compare video quality objectively (https://superuser.com/a/338734/55249)
+
+# Difficult to implement features:
+Due to [this unsolved issue](https://github.com/opencv/opencv/issues/9053) with seek, the following features are difficult to implement:  
+* Videos of two different framerates.
+* Options for seeking to a specific point in the video and moving forward and backward.
 
   [![Donate](https://raw.githubusercontent.com/nav9/VCF_contacts_merger/main/gallery/thankYouDonateButton.png)](https://nrecursions.blogspot.com/2020/08/saying-thank-you.html)  

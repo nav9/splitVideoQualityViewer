@@ -35,6 +35,7 @@ The maximum number of videos supported, is the lowest value of the number of row
 * Tested video formats: mkv, avi, mxf, flv, ogx, mp4, hevc, swf, m2ts, ts, m2v, vob, webm, mkv, wmv, mov, wtv, mpeg, 3gp, mpg, asf, mts (theoretically, it should support any video file that Python's OpenCV package supports).
   
 # Feature upgrades possible:
+* Allowing the video to speed up faster than the framerate of the video with the fastest framerate.
 * Split video depending on mouse pointer position (possibly practical only when not more than two videos are played simultaneously). 
 * Add more key and mouse controls.
 * Add more video metadata on-screen.

@@ -13,9 +13,7 @@ class Const:
     SECOND_LIST_ELEMENT = 1
     # MOUSE_HOVER_SPLIT_MAX_VIDEO = 4 #If MAX_SIMULTANEOUS_VIDEO_DISPLAY exceeds MOUSE_HOVER_SPLIT_MAX_VIDEO, the mouse hover (which dynamically alters the video split position) capability won't be available
     MAX_SIMULTANEOUS_VIDEO_DISPLAY = 8 #maximum number of videos that can be shown at once (feel free to increase this number as per the hardware capability of your computer). 
-    RGB_VIDEO_DIMENSION_LEN = 3   
-    TIME_DELAY_VARIATION_JUMP = 0.1 #0.1 = one tenth of a second 
-    MAX_DELAY_BETWEEN_FRAMES = 2 #seconds
+    RGB_VIDEO_DIMENSION_LEN = 3       
 
 class VideoSplit:
     NONE = None #There's only one video or none
@@ -188,9 +186,9 @@ class DisplayVideos:
         self.checkMaxSupportedVideos()
         self.framerate = self.findMaxFramerate()
         self.width, self.height = self.findMaxDisplaySize()
-        self.defaultDelay = int(self.framerate)  
+        self.maxFramerate = int(self.framerate)  
         self.processor = VideoProcessor()
-        self.delayBetweenFrames = 0 #delay in second
+        self.delayBetweenFrames = self.maxFramerate
 
     def display(self):
         #Concatenate images: https://stackoverflow.com/questions/7589012/combining-two-images-with-opencv
@@ -213,7 +211,8 @@ class DisplayVideos:
                 break #exit while            
             joined = self.processor.splitAndArrangeVideoPieces(activeVideos)            
             cv2.imshow(self.windowName, joined) 
-            keyCode = cv2.waitKey(self.defaultDelay) & 0xFF #https://stackoverflow.com/questions/57690899/how-cv2-waitkey1-0xff-ordq-works
+            keyCode = cv2.waitKey(self.delayBetweenFrames) & 0xFF #https://stackoverflow.com/questions/57690899/how-cv2-waitkey1-0xff-ordq-works
+            
             if keyCode == KeyCodes.ESC: break #exit the program
             if keyCode == KeyCodes.SPACEBAR: time.sleep(1) #pause the video for a while
             if keyCode == KeyCodes.CYCLE_BACK: self.videos.rotate(-1) #switch positions of the videos up if horizontal splits, and backward if vertical splits
@@ -223,9 +222,10 @@ class DisplayVideos:
             if keyCode == KeyCodes.RIGHT_ARROW: #for either seeking forward cached frames
                 pass                            
             if keyCode == KeyCodes.UP_ARROW: #speed increase by decreasing the delay between frames
-                if self.delayBetweenFrames > Const.TIME_DELAY_VARIATION_JUMP: self.delayBetweenFrames -= Const.TIME_DELAY_VARIATION_JUMP
+                self.delayBetweenFrames -= self.maxFramerate
+                if self.delayBetweenFrames < 0: self.delayBetweenFrames = 0
             if keyCode == KeyCodes.DOWN_ARROW: #speed decrease by increasing the delay between frames
-                if self.delayBetweenFrames < Const.MAX_DELAY_BETWEEN_FRAMES: self.delayBetweenFrames += Const.TIME_DELAY_VARIATION_JUMP                
+                self.delayBetweenFrames += self.maxFramerate
             if keyCode == KeyCodes.DOWN_ARROW or keyCode == KeyCodes.UP_ARROW: log.info(f"Time delay between frames: {self.delayBetweenFrames}s")
             if keyCode == ord(KeyCodes.SPLIT_DIRECTION) or keyCode == ord(KeyCodes.SPLIT_DIRECTION.lower()):#to split the video horizontally or vertically
                 self.processor.toggleSplitAxis(activeVideos)            
@@ -233,7 +233,7 @@ class DisplayVideos:
                 self.processor.toggleLineSeparator(activeVideos)
             if keyCode == ord(KeyCodes.SHOW_NAME) or keyCode == ord(KeyCodes.SHOW_NAME.lower()):#to show a line where the video is separated from other videos (no line is shown if only one video is present)
                 self.processor.toggleFileNameDisplay()
-            if self.delayBetweenFrames > 0: time.sleep(self.delayBetweenFrames) #to slow down the video when necessary                
+            #if self.delayBetweenFrames > 0: time.sleep(self.delayBetweenFrames) #to slow down the video when necessary                
             currentFrame = currentFrame + 1
         self.close()
 

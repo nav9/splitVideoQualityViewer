@@ -185,10 +185,13 @@ class DisplayVideos:
             self.videos.append(VideoFile(videoFile))
         self.checkMaxSupportedVideos()
         self.framerate = self.findMaxFramerate()
+        if self.framerate <= 0: log.error(f"Framerate can't be {self.framerate}")
         self.width, self.height = self.findMaxDisplaySize()
         self.maxFramerate = int(self.framerate)  
         self.processor = VideoProcessor()
         self.delayBetweenFrames = self.maxFramerate
+        self.delayVariation = int(self.maxFramerate / 5)
+        if self.delayVariation <= 0: self.delayVariation = 1
 
     def display(self):
         #Concatenate images: https://stackoverflow.com/questions/7589012/combining-two-images-with-opencv
@@ -222,18 +225,17 @@ class DisplayVideos:
             if keyCode == KeyCodes.RIGHT_ARROW: #for either seeking forward cached frames
                 pass                            
             if keyCode == KeyCodes.UP_ARROW: #speed increase by decreasing the delay between frames
-                self.delayBetweenFrames -= self.maxFramerate
+                self.delayBetweenFrames -= int(self.maxFramerate / 2)
                 if self.delayBetweenFrames < 0: self.delayBetweenFrames = 0
             if keyCode == KeyCodes.DOWN_ARROW: #speed decrease by increasing the delay between frames
-                self.delayBetweenFrames += self.maxFramerate
-            if keyCode == KeyCodes.DOWN_ARROW or keyCode == KeyCodes.UP_ARROW: log.info(f"Time delay between frames: {self.delayBetweenFrames}s")
+                self.delayBetweenFrames += int(self.maxFramerate / 2)
+            if keyCode == KeyCodes.DOWN_ARROW or keyCode == KeyCodes.UP_ARROW: log.info(f"Delay between frames: {self.delayBetweenFrames}")
             if keyCode == ord(KeyCodes.SPLIT_DIRECTION) or keyCode == ord(KeyCodes.SPLIT_DIRECTION.lower()):#to split the video horizontally or vertically
                 self.processor.toggleSplitAxis(activeVideos)            
             if keyCode == ord(KeyCodes.SHOW_LINE_SPLITTER) or keyCode == ord(KeyCodes.SHOW_LINE_SPLITTER.lower()):#to show a line where the video is separated from other videos (no line is shown if only one video is present)
                 self.processor.toggleLineSeparator(activeVideos)
             if keyCode == ord(KeyCodes.SHOW_NAME) or keyCode == ord(KeyCodes.SHOW_NAME.lower()):#to show a line where the video is separated from other videos (no line is shown if only one video is present)
-                self.processor.toggleFileNameDisplay()
-            #if self.delayBetweenFrames > 0: time.sleep(self.delayBetweenFrames) #to slow down the video when necessary                
+                self.processor.toggleFileNameDisplay()              
             currentFrame = currentFrame + 1
         self.close()
 

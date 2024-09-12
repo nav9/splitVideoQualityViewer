@@ -190,25 +190,37 @@ class DisplayVideos:
         self.maxFramerate = int(self.framerate)  
         self.processor = VideoProcessor()
         self.delayBetweenFrames = self.maxFramerate
-        self.delayVariation = int(self.maxFramerate / 5)
-        if self.delayVariation <= 0: self.delayVariation = 1
+        self.delayGranularity = int(self.maxFramerate / 5)
+        if self.delayGranularity <= 0: self.delayGranularity = 1  
+        self.seekGranularity = self.maxFramerate      
 
     def display(self):
         #Concatenate images: https://stackoverflow.com/questions/7589012/combining-two-images-with-opencv
         self.windowName = 'Comparing Videos'
         cv2.namedWindow(self.windowName, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(self.windowName, self.width, self.height) 
-        currentFrame = 0                
+        numFramesTraversed = 0; currentFrame = 0         
         while True:
             #---iterate videos assuming that one of them might stop supplying frames eariler than the others
-            activeVideos = dict()            
+            activeVideos = dict()    
+            numFramesCountedAlready = False        
             for video in self.videos:
-                if video.video.isOpened():
-                    gotValidFrame, videoFrame = video.video.read() #frame is a numpy nd array
-                    if gotValidFrame:
-                        #print(f"dimensions:  {videoFrame.ndim}, {videoFrame.shape}")
-                        video.frames.append(videoFrame) #caching it to be able to move backward when needed
-                        activeVideos[video] = videoFrame
+                if currentFrame <= numFramesTraversed - 1: #means there would be cached frames in at least some videos which run till currentFrame
+                    activeVideos[video] = video.frames[currentFrame]
+                    if not numFramesCountedAlready:
+                        currentFrame = currentFrame + 1
+                        numFramesCountedAlready = True
+                else:#no cached videos at currentFrame. Need to get it from the video          
+                    if video.video.isOpened():
+                        gotValidFrame, videoFrame = video.video.read() #frame is a numpy nd array
+                        if gotValidFrame:
+                            #print(f"dimensions:  {videoFrame.ndim}, {videoFrame.shape}")
+                            video.frames.append(videoFrame) #caching it to be able to move backward when needed
+                            if not numFramesCountedAlready: #to increment it only once per iteration of all videos
+                                numFramesTraversed += 1
+                                currentFrame = numFramesTraversed
+                                numFramesCountedAlready = True
+                            activeVideos[video] = videoFrame
             
             if not activeVideos:#if there are no active videos remaining
                 break #exit while            
@@ -221,9 +233,11 @@ class DisplayVideos:
             if keyCode == KeyCodes.CYCLE_BACK: self.videos.rotate(-1) #switch positions of the videos up if horizontal splits, and backward if vertical splits
             if keyCode == KeyCodes.CYCLE_FORWARD: self.videos.rotate(1) #switch positions of videos down if horizontal splits, and forward if vertical splits
             if keyCode == KeyCodes.LEFT_ARROW: #for either seeking backward cached frames
-                pass 
+                currentFrame -= self.seekGranularity
+                if currentFrame < 0: currentFrame = 0 
             if keyCode == KeyCodes.RIGHT_ARROW: #for either seeking forward cached frames
-                pass                            
+                currentFrame += self.seekGranularity
+                if currentFrame >= numFramesTraversed: currentFrame = numFramesTraversed - 1
             if keyCode == KeyCodes.UP_ARROW: #speed increase by decreasing the delay between frames
                 self.delayBetweenFrames -= int(self.maxFramerate / 2)
                 if self.delayBetweenFrames < 0: self.delayBetweenFrames = 0
@@ -236,7 +250,6 @@ class DisplayVideos:
                 self.processor.toggleLineSeparator(activeVideos)
             if keyCode == ord(KeyCodes.SHOW_NAME) or keyCode == ord(KeyCodes.SHOW_NAME.lower()):#to show a line where the video is separated from other videos (no line is shown if only one video is present)
                 self.processor.toggleFileNameDisplay()              
-            currentFrame = currentFrame + 1
         self.close()
 
     def close(self):

@@ -206,10 +206,11 @@ class DisplayVideos:
             numFramesCountedAlready = False        
             for video in self.videos:
                 if currentFrame <= numFramesTraversed - 1: #means there would be cached frames in at least some videos which run till currentFrame
-                    activeVideos[video] = video.frames[currentFrame]
-                    if not numFramesCountedAlready:
-                        currentFrame = currentFrame + 1
-                        numFramesCountedAlready = True
+                    if currentFrame < len(video.frames):
+                        activeVideos[video] = video.frames[currentFrame]
+                    # if not numFramesCountedAlready:
+                    #     currentFrame = currentFrame + 1
+                    #     numFramesCountedAlready = True
                 else:#no cached videos at currentFrame. Need to get it from the video          
                     if video.video.isOpened():
                         gotValidFrame, videoFrame = video.video.read() #frame is a numpy nd array
@@ -221,7 +222,8 @@ class DisplayVideos:
                                 currentFrame = numFramesTraversed
                                 numFramesCountedAlready = True
                             activeVideos[video] = videoFrame
-            
+            if currentFrame <= numFramesTraversed - 1:
+                currentFrame = currentFrame + 1
             if not activeVideos:#if there are no active videos remaining
                 break #exit while            
             joined = self.processor.splitAndArrangeVideoPieces(activeVideos)            
@@ -240,10 +242,10 @@ class DisplayVideos:
                 if currentFrame >= numFramesTraversed: currentFrame = numFramesTraversed - 1
             if keyCode == KeyCodes.UP_ARROW: #speed increase by decreasing the delay between frames
                 self.delayBetweenFrames -= int(self.maxFramerate / 2)
-                if self.delayBetweenFrames < 0: self.delayBetweenFrames = 0
+                if self.delayBetweenFrames < 0: self.delayBetweenFrames = 1
             if keyCode == KeyCodes.DOWN_ARROW: #speed decrease by increasing the delay between frames
                 self.delayBetweenFrames += int(self.maxFramerate / 2)
-            if keyCode == KeyCodes.DOWN_ARROW or keyCode == KeyCodes.UP_ARROW: log.info(f"Delay between frames: {self.delayBetweenFrames}")
+            #if keyCode == KeyCodes.DOWN_ARROW or keyCode == KeyCodes.UP_ARROW: log.info(f"Delay between frames: {self.delayBetweenFrames}")
             if keyCode == ord(KeyCodes.SPLIT_DIRECTION) or keyCode == ord(KeyCodes.SPLIT_DIRECTION.lower()):#to split the video horizontally or vertically
                 self.processor.toggleSplitAxis(activeVideos)            
             if keyCode == ord(KeyCodes.SHOW_LINE_SPLITTER) or keyCode == ord(KeyCodes.SHOW_LINE_SPLITTER.lower()):#to show a line where the video is separated from other videos (no line is shown if only one video is present)

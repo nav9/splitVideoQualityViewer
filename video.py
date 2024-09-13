@@ -224,6 +224,7 @@ class DisplayVideos:
                             activeVideos[video] = videoFrame
             if currentFrame <= numFramesTraversed - 1:
                 currentFrame = currentFrame + 1
+            #TODO: Since frames are being appended to each video instance, there's no need of storing videoFrame in activeVideos
             if not activeVideos:#if there are no active videos remaining
                 break #exit while            
             joined = self.processor.splitAndArrangeVideoPieces(activeVideos)            

@@ -42,6 +42,7 @@ The maximum number of videos supported, is the lowest value of the number of row
 * If two videos of differing lengths are played, after the first one completes, the second one will be shown fullscreen and the line separator if present midscreen, will be switched off. Even if you seek backward until the first video appears back on screen, the line separator won't re-appear. This can be solved easily, but is left as-is for now as it isn't a critical feature. Simply press the relevant key in the `Controls` mentioned above to make the line reappear.
 
 # Feature upgrades possible
+* Caching all frames of videos in memory at the beginning so that moving forward and backward is easy.  
 * Split video depending on mouse pointer position (possibly practical only when not more than two videos are played simultaneously). 
 * Add more key and mouse controls.
 * Add more video metadata on-screen.

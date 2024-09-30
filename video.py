@@ -195,8 +195,8 @@ class DisplayVideos:
         self.seekGranularity = self.maxFramerate   
         self.maxFramesAvailable = 0 
 
-    def cacheVideos(self):  
-        print(f"Please wait while frames are cached for {len(self.videos)} videos (this is necessary due to a certain bug in the video processing base library).")
+    def preCacheVideos(self):  
+        print(f"Please wait while frames are cached for {len(self.videos)} videos (this is necessary to overcome a seek bug in the video processing base library).")
         noMoreFrames = False
         while not noMoreFrames:
             noMoreFrames = True
@@ -213,8 +213,7 @@ class DisplayVideos:
         #Concatenate images: https://stackoverflow.com/questions/7589012/combining-two-images-with-opencv
         self.windowName = 'Comparing Videos'
         cv2.namedWindow(self.windowName, cv2.WINDOW_NORMAL)
-        cv2.resizeWindow(self.windowName, self.width, self.height) 
-        #numFramesTraversed = 0; 
+        cv2.resizeWindow(self.windowName, self.width, self.height)  
         currentFrame = 0         
         while True:
             #---iterate videos assuming that one of them might stop supplying frames eariler than the others
@@ -223,7 +222,6 @@ class DisplayVideos:
                 if currentFrame < len(video.frames):
                     activeVideos[video] = video.frames[currentFrame]
             currentFrame = currentFrame + 1
-            #TODO: Since frames are being appended to each video instance, there's no need of storing videoFrame in activeVideos
             if not activeVideos:#if there are no active videos remaining
                 break #exit while            
             joined = self.processor.splitAndArrangeVideoPieces(activeVideos)            

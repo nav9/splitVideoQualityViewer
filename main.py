@@ -10,7 +10,7 @@ if __name__ == "__main__":
 
     log.info(f"Videos: {args.v}")
     display = video.DisplayVideos(args.v)
-    display.cacheVideos()
+    display.preCacheVideos()
     display.display()
     
     log.info("Program completed")

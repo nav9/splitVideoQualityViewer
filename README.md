@@ -37,6 +37,7 @@ The maximum number of videos supported, is the lowest value of the number of row
 * Each frame of the video is pre-cached to allow for an accurate seek. Without this caching, [this unsolved issue](https://github.com/opencv/opencv/issues/9053) would lead to the video jumping to incorrect frames.  
 * The seeking and slowing down or speeding up of the video have been implemented as fractions of the video which has the maximum framerate. If you are not comfortable with the granularity of it, you can alter it in `video.py` at the variables named `delayGranularity` and `seekGranularity` in the `DisplayVideos` class.
 * Tested video formats: mkv, avi, mxf, flv, ogx, mp4, hevc, swf, m2ts, ts, m2v, vob, webm, mkv, wmv, mov, wtv, mpeg, 3gp, mpg, asf, mts (theoretically, it should support any video file that Python's OpenCV package supports).
+* After the last frame of the last video is shown, the playback will loop to the start of all videos.
   
 # Known bug(s)
 * If two videos of differing lengths are played, after the first one completes, the second one will be shown fullscreen and the line separator if present midscreen, will be switched off. Even if you seek backward until the first video appears back on screen, the line separator won't re-appear. This can be solved easily, but is left as-is for now as it isn't a critical feature. Simply press the relevant key in the `Controls` mentioned above to make the line reappear.

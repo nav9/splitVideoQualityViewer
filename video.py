@@ -216,6 +216,8 @@ class DisplayVideos:
         cv2.resizeWindow(self.windowName, self.width, self.height)  
         currentFrame = 0         
         while True:
+            if currentFrame >= self.maxFramesAvailable:
+                currentFrame = 0 #looping to the front of the video
             #---iterate videos assuming that one of them might stop supplying frames eariler than the others
             activeVideos = dict()    
             for video in self.videos:

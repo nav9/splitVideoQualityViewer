@@ -192,45 +192,43 @@ class DisplayVideos:
         self.delayBetweenFrames = self.maxFramerate
         self.delayGranularity = int(self.maxFramerate / 5)
         if self.delayGranularity <= 0: self.delayGranularity = 1  
-        self.seekGranularity = self.maxFramerate      
+        self.seekGranularity = self.maxFramerate   
+        self.maxFramesAvailable = 0 
+
+    def cacheVideos(self):  
+        print(f"Please wait while frames are cached for {len(self.videos)} videos (this is necessary due to a certain bug in the video processing base library).")
+        noMoreFrames = False
+        while not noMoreFrames:
+            noMoreFrames = True
+            for video in self.videos:
+                if video.video.isOpened():
+                    gotValidFrame, videoFrame = video.video.read() #frame is a numpy nd array
+                    if gotValidFrame:
+                        noMoreFrames = False
+                        video.frames.append(videoFrame) #caching it to be able to move backward when needed
+        self.maxFramesAvailable = max([len(video.frames) for video in self.videos])
+        print(f"Caching completed. Maximum number of frames in one of the videos is {self.maxFramesAvailable}.")
 
     def display(self):
         #Concatenate images: https://stackoverflow.com/questions/7589012/combining-two-images-with-opencv
         self.windowName = 'Comparing Videos'
         cv2.namedWindow(self.windowName, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(self.windowName, self.width, self.height) 
-        numFramesTraversed = 0; currentFrame = 0         
+        #numFramesTraversed = 0; 
+        currentFrame = 0         
         while True:
             #---iterate videos assuming that one of them might stop supplying frames eariler than the others
             activeVideos = dict()    
-            numFramesCountedAlready = False        
             for video in self.videos:
-                if currentFrame <= numFramesTraversed - 1: #means there would be cached frames in at least some videos which run till currentFrame
-                    if currentFrame < len(video.frames):
-                        activeVideos[video] = video.frames[currentFrame]
-                    # if not numFramesCountedAlready:
-                    #     currentFrame = currentFrame + 1
-                    #     numFramesCountedAlready = True
-                else:#no cached videos at currentFrame. Need to get it from the video          
-                    if video.video.isOpened():
-                        gotValidFrame, videoFrame = video.video.read() #frame is a numpy nd array
-                        if gotValidFrame:
-                            #print(f"dimensions:  {videoFrame.ndim}, {videoFrame.shape}")
-                            video.frames.append(videoFrame) #caching it to be able to move backward when needed
-                            if not numFramesCountedAlready: #to increment it only once per iteration of all videos
-                                numFramesTraversed += 1
-                                currentFrame = numFramesTraversed
-                                numFramesCountedAlready = True
-                            activeVideos[video] = videoFrame
-            if currentFrame <= numFramesTraversed - 1:
-                currentFrame = currentFrame + 1
+                if currentFrame < len(video.frames):
+                    activeVideos[video] = video.frames[currentFrame]
+            currentFrame = currentFrame + 1
             #TODO: Since frames are being appended to each video instance, there's no need of storing videoFrame in activeVideos
             if not activeVideos:#if there are no active videos remaining
                 break #exit while            
             joined = self.processor.splitAndArrangeVideoPieces(activeVideos)            
             cv2.imshow(self.windowName, joined) 
-            keyCode = cv2.waitKey(self.delayBetweenFrames) & 0xFF #https://stackoverflow.com/questions/57690899/how-cv2-waitkey1-0xff-ordq-works
-            
+            keyCode = cv2.waitKey(self.delayBetweenFrames) & 0xFF #https://stackoverflow.com/questions/57690899/how-cv2-waitkey1-0xff-ordq-works            
             if keyCode == KeyCodes.ESC: break #exit the program
             if keyCode == KeyCodes.SPACEBAR: time.sleep(1) #pause the video for a while
             if keyCode == KeyCodes.CYCLE_BACK: self.videos.rotate(-1) #switch positions of the videos up if horizontal splits, and backward if vertical splits
@@ -240,7 +238,7 @@ class DisplayVideos:
                 if currentFrame < 0: currentFrame = 0 
             if keyCode == KeyCodes.RIGHT_ARROW: #for either seeking forward cached frames
                 currentFrame += self.seekGranularity
-                if currentFrame >= numFramesTraversed: currentFrame = numFramesTraversed - 1
+                if currentFrame >= self.maxFramesAvailable: currentFrame = self.maxFramesAvailable - 1
             if keyCode == KeyCodes.UP_ARROW: #speed increase by decreasing the delay between frames
                 self.delayBetweenFrames -= int(self.maxFramerate / 2)
                 if self.delayBetweenFrames < 0: self.delayBetweenFrames = 1

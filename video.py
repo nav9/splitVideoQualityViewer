@@ -1,3 +1,5 @@
+#trackbar and buttons https://stackoverflow.com/questions/54674343/how-do-we-create-a-trackbar-in-open-cv-so-that-i-can-use-it-to-skip-to-specific
+#https://stackoverflow.com/questions/38314933/how-to-make-buttons-in-opencv-3-1-using-cv2-createbutton
 import sys
 import cv2
 import time
@@ -194,9 +196,10 @@ class DisplayVideos:
         if self.delayGranularity <= 0: self.delayGranularity = 1  
         self.seekGranularity = self.maxFramerate   
         self.maxFramesAvailable = 0 
+        self.currentFrame = 0 
 
     def preCacheVideos(self):  
-        print(f"Please wait while frames are cached for {len(self.videos)} videos (this is necessary to overcome a seek bug in the video processing base library).")
+        print(f"Please wait while frames are cached for {len(self.videos)} videos (this is necessary to overcome a seek bug in the video processing base library). All videos will be loaded into RAM (the efficiency of this data storage depends on how Python manages memory).")
         noMoreFrames = False
         while not noMoreFrames:
             noMoreFrames = True
@@ -209,21 +212,26 @@ class DisplayVideos:
         self.maxFramesAvailable = max([len(video.frames) for video in self.videos])
         print(f"Caching completed. Maximum number of frames in one of the videos is {self.maxFramesAvailable}.")
 
+    def getThisFrame(self, trackbarValue):
+        self.currentFrame = trackbarValue
+
     def display(self):
         #Concatenate images: https://stackoverflow.com/questions/7589012/combining-two-images-with-opencv
         self.windowName = 'Comparing Videos'
         cv2.namedWindow(self.windowName, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(self.windowName, self.width, self.height)  
-        currentFrame = 0         
+        cv2.createTrackbar("Frame", self.windowName, 0, self.maxFramesAvailable, self.getThisFrame)
+        cv2.createTrackbar("Speed", self.windowName, playSpeed, 100, setSpeed)
+        self.currentFrame = 0         
         while True:
-            if currentFrame >= self.maxFramesAvailable:
-                currentFrame = 0 #looping to the front of the video
+            if self.currentFrame >= self.maxFramesAvailable:
+                self.currentFrame = 0 #looping to the front of the video
             #---iterate videos assuming that one of them might stop supplying frames eariler than the others
             activeVideos = dict()    
             for video in self.videos:
-                if currentFrame < len(video.frames):
-                    activeVideos[video] = video.frames[currentFrame]
-            currentFrame = currentFrame + 1
+                if self.currentFrame < len(video.frames):
+                    activeVideos[video] = video.frames[self.currentFrame]
+            self.currentFrame = self.currentFrame + 1
             if not activeVideos:#if there are no active videos remaining
                 break #exit while            
             joined = self.processor.splitAndArrangeVideoPieces(activeVideos)            
@@ -234,11 +242,11 @@ class DisplayVideos:
             if keyCode == KeyCodes.CYCLE_BACK: self.videos.rotate(-1) #switch positions of the videos up if horizontal splits, and backward if vertical splits
             if keyCode == KeyCodes.CYCLE_FORWARD: self.videos.rotate(1) #switch positions of videos down if horizontal splits, and forward if vertical splits
             if keyCode == KeyCodes.LEFT_ARROW: #for either seeking backward cached frames
-                currentFrame -= self.seekGranularity
-                if currentFrame < 0: currentFrame = 0 
+                self.currentFrame -= self.seekGranularity
+                if self.currentFrame < 0: self.currentFrame = 0 
             if keyCode == KeyCodes.RIGHT_ARROW: #for either seeking forward cached frames
-                currentFrame += self.seekGranularity
-                if currentFrame >= self.maxFramesAvailable: currentFrame = self.maxFramesAvailable - 1
+                self.currentFrame += self.seekGranularity
+                if self.currentFrame >= self.maxFramesAvailable: self.currentFrame = self.maxFramesAvailable - 1
             if keyCode == KeyCodes.UP_ARROW: #speed increase by decreasing the delay between frames
                 self.delayBetweenFrames -= int(self.maxFramerate / 2)
                 if self.delayBetweenFrames < 0: self.delayBetweenFrames = 1

@@ -195,7 +195,7 @@ class DisplayVideos:
         self.delayBetweenFrames = self.maxFramerate
         self.maxDelayBetweenFrames = 1000
         self.frameTrackbarName = "Frame"
-        self.speedTrackbarName = "Speed"
+        self.delayTrackbarName = "Delay"
         #self.delayGranularity = int(self.maxFramerate / 5)
         #if self.delayGranularity <= 0: self.delayGranularity = 1  
         self.seekGranularity = self.maxFramerate   
@@ -237,7 +237,7 @@ class DisplayVideos:
         cv2.namedWindow(self.windowName, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(self.windowName, self.width, self.height)  
         cv2.createTrackbar(self.frameTrackbarName, self.windowName, 0, self.maxFramesAvailable, self.getThisFrame)
-        cv2.createTrackbar(self.speedTrackbarName, self.windowName, self.delayBetweenFrames, self.maxDelayBetweenFrames, self.setSpeed)                 
+        cv2.createTrackbar(self.delayTrackbarName, self.windowName, self.delayBetweenFrames, self.maxDelayBetweenFrames, self.setSpeed)                 
         while True:
             if self.currentFrame >= self.maxFramesAvailable:
                 self.currentFrame = 0 #looping to the front of the video

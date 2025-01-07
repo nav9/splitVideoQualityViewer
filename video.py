@@ -47,6 +47,7 @@ class VideoFile:
         self.video = cv2.VideoCapture(self.videoName)
         self.height = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.width = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
+        self.maxFrames = int(self.video.get(cv2.CAP_PROP_FRAME_COUNT))
         self.fps = self.video.get(cv2.CAP_PROP_FPS)        
         log.info(f"Video: {self.video}, height: {self.height}, width: {self.width}, fps: {self.fps}, name: {videoNameWithPath}")
         self.sliceStart = None
@@ -200,9 +201,11 @@ class DisplayVideos:
         self.seekGranularity = self.maxFramerate   
         self.maxFramesAvailable = 0 
         self.currentFrame = 0 
+        self.preCachingEnabled = True
 
     def preCacheVideos(self):  
         print(f"Please wait while frames are cached for {len(self.videos)} videos (this is necessary to overcome a seek bug in the video processing base library). All videos will be loaded into RAM (the efficiency of this data storage depends on how Python manages memory).")
+        self.preCachingEnabled = True
         noMoreFrames = False
         while not noMoreFrames:
             noMoreFrames = True
@@ -213,7 +216,12 @@ class DisplayVideos:
                         noMoreFrames = False
                         video.frames.append(videoFrame) #caching it to be able to move backward when needed
         self.maxFramesAvailable = max([len(video.frames) for video in self.videos])
-        print(f"Caching completed. Maximum number of frames in one of the videos is {self.maxFramesAvailable}.")
+        print(f"Pre-caching completed.")
+
+    def doNotPreCacheVideos(self):
+        self.preCachingEnabled = False
+        self.maxFramesAvailable = max([video.maxFrames for video in self.videos])
+        print("Proceeding without pre-caching...")        
 
     def getThisFrame(self, trackbarValue):
         self.currentFrame = trackbarValue
@@ -222,6 +230,7 @@ class DisplayVideos:
         self.delayBetweenFrames = max(trackbarValue, 1) #allowing the value to go less than 1 freezes the video and does not allow resumption
 
     def display(self):
+        print(f"The video with maximum number of frames has {self.maxFramesAvailable} frames.")
         #Concatenate images: https://stackoverflow.com/questions/7589012/combining-two-images-with-opencv
         self.currentFrame = 0
         self.windowName = 'Comparing Videos'
@@ -236,8 +245,17 @@ class DisplayVideos:
             cv2.setTrackbarPos(self.frameTrackbarName, self.windowName, self.currentFrame) 
             activeVideos = dict()    
             for video in self.videos:
-                if self.currentFrame < len(video.frames):
-                    activeVideos[video] = video.frames[self.currentFrame]
+                if self.preCachingEnabled:
+                    if self.currentFrame < len(video.frames):
+                        activeVideos[video] = video.frames[self.currentFrame]
+                else:
+                    if self.currentFrame < video.maxFrames:
+                        video.video.set(cv2.CAP_PROP_POS_FRAMES, self.currentFrame - 1) #-1 because CAP_PROP_POS_FRAMES sets it at index of the frame to be decoded/captured next.
+                        if video.video.isOpened():#TODO: check if this operation is necessary
+                            gotValidFrame, videoFrame = video.video.read() #frame is a numpy nd array
+                            if gotValidFrame:
+                                activeVideos[video] = videoFrame
+
             self.currentFrame = self.currentFrame + 1
             if not activeVideos:#if there are no active videos remaining
                 break #exit while            

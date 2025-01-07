@@ -41,6 +41,7 @@ The maximum number of videos supported, is the lowest value of the number of row
   
 # Known bug(s)
 * If two videos of differing lengths are played, after the first one completes, the second one will be shown fullscreen and the line separator if present midscreen, will be switched off. Even if you seek backward until the first video appears back on screen, the line separator won't re-appear. This can be solved easily, but is left as-is for now as it isn't a critical feature. Simply press the relevant key in the `Controls` mentioned above to make the line reappear.
+* Not a bug, but for very large videos, there will be issues of the RAM getting used entirely and swap mamory being used, and slow response, because the program loads the entire video into memory. This program was initially meant for use with smaller videos. A fix is being contemplated for this issue. Please suggest ideas if you know of a good way to overcome [this unsolved issue](https://github.com/opencv/opencv/issues/9053) because of which the complete video loading was implemented.
 
 # Feature upgrades possible 
 * Split video depending on mouse pointer position (possibly practical only when not more than two videos are played simultaneously). 

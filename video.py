@@ -192,8 +192,11 @@ class DisplayVideos:
         self.maxFramerate = int(self.framerate)  
         self.processor = VideoProcessor()
         self.delayBetweenFrames = self.maxFramerate
-        self.delayGranularity = int(self.maxFramerate / 5)
-        if self.delayGranularity <= 0: self.delayGranularity = 1  
+        self.maxDelayBetweenFrames = 1000
+        self.frameTrackbarName = "Frame"
+        self.speedTrackbarName = "Speed"
+        #self.delayGranularity = int(self.maxFramerate / 5)
+        #if self.delayGranularity <= 0: self.delayGranularity = 1  
         self.seekGranularity = self.maxFramerate   
         self.maxFramesAvailable = 0 
         self.currentFrame = 0 
@@ -215,18 +218,22 @@ class DisplayVideos:
     def getThisFrame(self, trackbarValue):
         self.currentFrame = trackbarValue
 
+    def setSpeed(self, trackbarValue):
+        self.delayBetweenFrames = max(trackbarValue, 1) #allowing the value to go less than 1 freezes the video and does not allow resumption
+
     def display(self):
         #Concatenate images: https://stackoverflow.com/questions/7589012/combining-two-images-with-opencv
+        self.currentFrame = 0
         self.windowName = 'Comparing Videos'
         cv2.namedWindow(self.windowName, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(self.windowName, self.width, self.height)  
-        cv2.createTrackbar("Frame", self.windowName, 0, self.maxFramesAvailable, self.getThisFrame)
-        cv2.createTrackbar("Speed", self.windowName, playSpeed, 100, setSpeed)
-        self.currentFrame = 0         
+        cv2.createTrackbar(self.frameTrackbarName, self.windowName, 0, self.maxFramesAvailable, self.getThisFrame)
+        cv2.createTrackbar(self.speedTrackbarName, self.windowName, self.delayBetweenFrames, self.maxDelayBetweenFrames, self.setSpeed)                 
         while True:
             if self.currentFrame >= self.maxFramesAvailable:
                 self.currentFrame = 0 #looping to the front of the video
             #---iterate videos assuming that one of them might stop supplying frames eariler than the others
+            cv2.setTrackbarPos(self.frameTrackbarName, self.windowName, self.currentFrame) 
             activeVideos = dict()    
             for video in self.videos:
                 if self.currentFrame < len(video.frames):
@@ -247,11 +254,11 @@ class DisplayVideos:
             if keyCode == KeyCodes.RIGHT_ARROW: #for either seeking forward cached frames
                 self.currentFrame += self.seekGranularity
                 if self.currentFrame >= self.maxFramesAvailable: self.currentFrame = self.maxFramesAvailable - 1
-            if keyCode == KeyCodes.UP_ARROW: #speed increase by decreasing the delay between frames
-                self.delayBetweenFrames -= int(self.maxFramerate / 2)
-                if self.delayBetweenFrames < 0: self.delayBetweenFrames = 1
-            if keyCode == KeyCodes.DOWN_ARROW: #speed decrease by increasing the delay between frames
-                self.delayBetweenFrames += int(self.maxFramerate / 2)
+            # if keyCode == KeyCodes.UP_ARROW: #speed increase by decreasing the delay between frames
+            #     self.delayBetweenFrames -= int(self.maxFramerate / 2)
+            #     if self.delayBetweenFrames < 0: self.delayBetweenFrames = 1
+            # if keyCode == KeyCodes.DOWN_ARROW: #speed decrease by increasing the delay between frames
+            #     self.delayBetweenFrames += int(self.maxFramerate / 2)
             #if keyCode == KeyCodes.DOWN_ARROW or keyCode == KeyCodes.UP_ARROW: log.info(f"Delay between frames: {self.delayBetweenFrames}")
             if keyCode == ord(KeyCodes.SPLIT_DIRECTION) or keyCode == ord(KeyCodes.SPLIT_DIRECTION.lower()):#to split the video horizontally or vertically
                 self.processor.toggleSplitAxis(activeVideos)            

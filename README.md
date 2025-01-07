@@ -21,8 +21,6 @@ The maximum number of videos supported, is the lowest value of the number of row
 # Controls
 * `Esc` to exit.
 * `Spacebar` to pause for one second. You can press the spacebar multiple times to make it pause longer.
-* `up arrow` to decrease the delay between each frame shown (speeds the video if it had been slowed). 
-* `down arrow` to increase the delay between each frame shown (slows the video).
 * `left arrow` to seek backward.
 * `right arrow` to seek forward toward any part of the video that has already been traversed and cached already.
 * `A` or `a` to toggle the axis of split (horizontal or vertical). The axis is vertical by default.
